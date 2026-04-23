@@ -53,15 +53,62 @@
             <div class="year-selector">
                 <h3>Year</h3>
                 <select name="years" id="years">
-                    <option value="2021">2021</option>
-                    <option value="2022">2022</option>
-                    <option value="2023">2023</option>
-                    <option value="2024">2024</option>
                     <option value="2025">2025</option>
                     <option value="2026">2026</option>
+                    <option value="2027">2027</option>
                 </select>
             </div>
         </div>
     </aside>
+    <main class="main">
+        <div class="projects">
+            <div class="projects__content">
+                <h1 class="projects__header">Projects</h1>
+                <div class="projects__buttons">
+                    <button class="btn project-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        <p class="btn-text">Add Project</p>
+                    </button>
+                    <button class="btn data-btn">
+                        <i class="fa-solid fa-database"></i>
+                        <p class="btn-text">Seed data</p>
+                    </button>
+                </div>
+                <div class="project__filter"></div>
+                <table class="projects__table">
+                    <thead>
+                        <tr>
+                            <th class="sortable filterable" data-sort="companyName" data-filter="companyName">
+                                Company Name
+                                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </th>
+                            <th class="sortable filterable" data-sort="projectName" data-filter="projectName">
+                                Project Name
+                                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </th>
+                            <th class="sortable" data-sort="budget">Budget
+                                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                            </th>
+                            <th class="sortable" data-sort="employeeCapacity">Employee Capacity
+                                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                            </th>
+                            <th class="sortable" data-sort="employees">Employees
+                                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                            </th>
+                            <th class="sortable" data-sort="estimatedIncome">Estimated Income
+                                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Project rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 </body>
 </html>
