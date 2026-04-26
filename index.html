@@ -113,6 +113,57 @@
                 </div>
             </div>
         </section>
+        <section class="employees">
+                <div class="employees__content">
+                    <div class="employees__content__header">
+                        <h1 class="employees__header">Employees</h1>
+                        <div class="Employees__buttons">
+                            <button class="btn employee-btn">
+                                <i class="fa-solid fa-plus"></i>
+                                <p class="btn-text">Add Employee</p>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="employees__filters-container" class="filters-container"></div>
+                    <table class="employees__table">
+                        <thead>
+                            <tr>
+                                <th class="sortable filterable" data-sort="firstName" data-filter="firstName">
+                                    First Name
+                                    <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </th>
+                                <th class="sortable filterable" data-sort="lastName" data-filter="lastName">
+                                    Last Name
+                                    <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </th>
+                                <th class="sortable" data-sort="age">
+                                    Age
+                                </th>
+                                <th class="sortable filterable" data-sort="position" data-filter="position">Position
+                                    <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </th>
+                                <th class="sortable" data-sort="salary">Salary
+                                    <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                </th>
+                                <th class="sortable filterable" data-sort="projectId" data-filter="projectId">Project
+                                    <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </th>
+                                <th class="sortable" data-sort="projectIncome">Project Income
+                                    <i class="fa-solid fa-arrow-down-wide-short"></i>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Employee rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+        </section>
     </main>
 </body>
 </html>
