@@ -46,13 +46,13 @@
                             </a>
                         </li>
                         <li class="menu__item">
-                            <a href="#" class="menu__link">
+                            <a href="#projects" class="menu__link">
                                 <i class="fa-solid fa-diagram-project"></i>
                                 Projects
                             </a>
                         </li>
                         <li class="menu__item">
-                            <a href="#" class="menu__link">
+                            <a href="#employees" class="menu__link">
                                 <i class="fa-solid fa-address-book"></i>
                                 Employees
                             </a>
@@ -88,22 +88,24 @@
             </div>
         </aside>
         <main class="main">
-            <section class="projects">
+            <section class="projects" id="projects">
                 <div class="projects__content">
-                    <h1 class="projects__header">Projects</h1>
-                    <div class="projects__buttons">
-                        <button class="btn project-btn">
-                            <i class="fa-solid fa-plus"></i>
-                            <p class="btn-text">Add Project</p>
-                        </button>
-                        <button class="btn data-btn">
-                            <i class="fa-solid fa-database"></i>
-                            <p class="btn-text">Seed data</p>
-                        </button>
+                    <div class="projects__header">
+                        <h1 class="projects__header">Projects</h1>
+                        <div class="projects__buttons">
+                            <button class="btn project-btn">
+                                <i class="fa-solid fa-plus"></i>
+                                <p class="btn-text">Add Project</p>
+                            </button>
+                            <button class="btn data-btn">
+                                <i class="fa-solid fa-database"></i>
+                                <p class="btn-text">Seed data</p>
+                            </button>
+                        </div>
                     </div>
                     <div class="project__filter"></div>
                     <table class="projects__table">
-                        <thead>
+                        <thead class="projects__table__header">
                             <tr>
                                 <th class="sortable filterable" data-sort="companyName" data-filter="companyName">
                                     Company Name
@@ -140,7 +142,7 @@
                     </div>
                 </div>
             </section>
-            <section class="employees hidden">
+            <section class="employees hidden" id="employees">
                     <div class="employees__content">
                         <div class="employees__content__header">
                             <h1 class="employees__header">Employees</h1>
@@ -193,5 +195,6 @@
             </section>
         </main>
     </div>
+    <script src="script.js"></script>
 </body>
 </html>

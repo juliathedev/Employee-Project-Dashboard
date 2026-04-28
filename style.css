@@ -1,7 +1,7 @@
 html {
     scroll-behavior: smooth;
 }
-*, *::before, *::after, h1, h2, h3, p {
+*, *::before, *::after, h1, h2, h3, p, th, td, tr, table {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -118,6 +118,9 @@ h3 {
     flex-grow: 1;
     padding: 40px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
 }
 .hidden {
     display: none;
@@ -125,5 +128,63 @@ h3 {
 .projects__header {
     display: flex;
     flex-direction: row;
-    gap: 32px;
+    justify-content: space-between;
+    align-items: center;
 }
+.btn {
+    width: 122px;
+    height: 40px;
+    border-radius: 6px;
+    border: 1px solid #787486;
+    color: #787486;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.projects__buttons {
+    gap: 16px;
+    display: flex;
+    flex-direction: row;
+}
+.btn-text {
+    margin-left: 8px;
+}
+h1 {
+    color: #0D062D;
+    font-size: 46px;
+    font-weight: 600;
+}
+
+.projects__table {
+    margin-top: 60px;
+    border-collapse: collapse;
+    width: 100%;
+    box-shadow: 0 2px 10px hsla(0, 0%, 96%, 1);
+}
+th, td {
+    padding: 20px;
+    text-align: left;
+    color: #0D062D;
+}
+table tr:first-child th:first-child { border-top-left-radius: 12px; }
+table tr:first-child th:last-child { border-top-right-radius: 12px; }
+.projects__table__header {
+    background-color: hsla(251, 78%, 54%, 0.08);
+}
+.projects__total-income {
+    margin-top: 20px;
+    padding: 15px 20px;
+    background-color: #ecf0f1;
+    border-radius: 6px;
+    font-size: 1.1em;
+}
+.employees-btn {
+    background-color: hsla(251, 78%, 54%, 1);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
