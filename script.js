@@ -102,6 +102,15 @@ function renderProjectsTable() {
     });
 }
 
+// Toggle close
+const toggleBtn = document.querySelector('.menu-toggle');
+const sidebar = document.querySelector('.sidebar');
+
+toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+});
+
+
 function updateTotalIncome(total) {
     const totalIncomeElement = document.querySelector('.total-income-value');
     if (totalIncomeElement) {
@@ -212,20 +221,20 @@ function updateTotalIncome(projectsArray) {
     const totalIncomeElement = document.querySelector('.total-income-value');
     if (!totalIncomeElement) return;
     
-    console.log('updateTotalIncome получил:', projectsArray); // Отладка
+    console.log('updateTotalIncome получил:', projectsArray);
     
-    // Подсчёт суммы
+    
     let total = 0;
     
     if (Array.isArray(projectsArray)) {
         for (let i = 0; i < projectsArray.length; i++) {
             const income = projectsArray[i].estimatedIncome;
-            console.log(`Проект ${i}: estimatedIncome = ${income}`); // Отладка
+            console.log(`Проект ${i}: estimatedIncome = ${income}`);
             total = total + (income || 0);
         }
     }
     
-    console.log('Итоговая сумма:', total); // Отладка
+    console.log('Итоговая сумма:', total);
     totalIncomeElement.textContent = `$${total.toLocaleString()}`;
 }
 
