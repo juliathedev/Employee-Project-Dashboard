@@ -57,6 +57,76 @@ function getCurrentMonthKey() {
     return `${currentYear}-${monthNum}`;
 }
 
+const employeesData = [
+    { id: 101, name: 'John Smith', position: 'Senior Developer', salary: 5000 },
+    { id: 102, name: 'Anna Lee', position: 'QA Engineer', salary: 3500 },
+    { id: 103, name: 'Mike Brown', position: 'Project Manager', salary: 6200 },
+    { id: 104, name: 'Sarah Davis', position: 'Data Analyst', salary: 4800 },
+    { id: 105, name: 'David Wilson', position: 'Junior Developer', salary: 2500 }
+];
+
+const fitCoefficients = {
+    1: { // CRM Upgrade
+        'Senior Developer': 1.2,
+        'QA Engineer': 0.9,
+        'Project Manager': 1.0,
+        'Data Analyst': 0.8,
+        'Junior Developer': 0.7
+    },
+    2: { // Analytics Platform
+        'Senior Developer': 1.1,
+        'QA Engineer': 0.8,
+        'Project Manager': 1.0,
+        'Data Analyst': 1.3,
+        'Junior Developer': 0.6
+    },
+    3: { // Mobile App
+        'Senior Developer': 1.0,
+        'QA Engineer': 1.0,
+        'Project Manager': 0.9,
+        'Data Analyst': 0.7,
+        'Junior Developer': 0.8
+    },
+    4: { // Cloud Migration
+        'Senior Developer': 1.3,
+        'QA Engineer': 0.9,
+        'Project Manager': 1.1,
+        'Data Analyst': 0.9,
+        'Junior Developer': 0.7
+    }
+};
+
+const assignments = [
+    { projectId: 1, employeeId: 101, capacity: 0.8 },
+    { projectId: 1, employeeId: 102, capacity: 0.5 },
+    { projectId: 1, employeeId: 103, capacity: 0.3 },
+    { projectId: 2, employeeId: 104, capacity: 0.7 },
+    { projectId: 2, employeeId: 101, capacity: 0.4 },
+    { projectId: 3, employeeId: 105, capacity: 0.6 },
+    { projectId: 3, employeeId: 102, capacity: 0.4 },
+    { projectId: 4, employeeId: 103, capacity: 0.5 },
+    { projectId: 4, employeeId: 104, capacity: 0.6 },
+    { projectId: 4, employeeId: 101, capacity: 0.7 }
+];
+const vacations = {
+    '2026-01': {
+        101: 2,
+        102: 0,
+        103: 5,
+        104: 1,
+        105: 3
+    },
+    '2026-02': {
+        101: 0,
+        102: 3,
+        103: 0,
+        104: 0,
+        105: 2
+    }
+};
+
+
+
 // ========== РАСЧЁТ TOTAL INCOME ==========
 function calculateTotalIncome(projects) {
     if (!Array.isArray(projects)) return 0;
@@ -422,187 +492,171 @@ projectForm.addEventListener('submit', (e) => {
     }
 });
 
+function getWorkingDaysInMonth(monthKey) {
+    return 22;
+}
 
-
-// Employes Modal
-// function showEmployeesModal(projectId, projectName) {
-
-//     const modal = document.createElement('div');
-//     modal.className = 'employees-modal';
-//     modal.innerHTML = `
-//     <div class="modal-overlay">
-//         <div class="modal-container">
-//         <div class="modal-header">
-//             <h3><i class="fa-solid fa-users"></i> ${projectName} - Employees</h3>
-//             <button class="modal-close">&times;</button>
-//         </div>
-//         <div class="modal-body">
-//             <table class="employees-list-table">
-//             <thead>
-//                 <tr><th>Name</th><th>Position</th><th>Capacity</th></tr>
-//             </thead>
-//             <tbody id="employeesListBody"></tbody>
-//             </table>
-//         </div>
-//         <div class="modal-footer">
-//             <button class="btn-add-employee">+ Add Employee</button>
-//         </div>
-//         </div>
-//     </div>
-//     `;
+// ========== FINANCIAL CALCULATIONS FOR EACH EMPLOYEE ==========
+function calculateEmployeeDetails(employee, assignment, projectId, monthKey) {
+    const capacity = assignment.capacity;
+    const fit = fitCoefficients[projectId]?.[employee.position] || 1.0;
     
-//     document.body.appendChild(modal);
+    const vacationDays = (vacations[monthKey]?.[employee.id]) || 0;
+    const workingDays = getWorkingDaysInMonth(monthKey);
+    const vacationFactor = 1 - (vacationDays / workingDays);
     
-//   // Загружаем сотрудников для проекта
-//     loadEmployeesForProject(projectId);
+    const effectiveCapacity = capacity * fit * vacationFactor;
+    const revenue = effectiveCapacity * employee.salary * 1.2;
+    const cost = capacity * employee.salary;
+    const profit = revenue - cost;
     
-//   // Закрытие модалки
-//     modal.querySelector('.modal-close').onclick = () => modal.remove();
-//     modal.querySelector('.modal-overlay').onclick = (e) => {
-//     if (e.target === modal.querySelector('.modal-overlay')) modal.remove();
-//     };
-// }
-
-// function loadEmployeesForProject(projectId) {
-//   // Данные сотрудников на проекте
-//     const projectEmployees = {
-//     1: [
-//         { name: 'John Smith', position: 'Senior Developer', capacity: 0.8 },
-//         { name: 'Anna Lee', position: 'QA Engineer', capacity: 0.5 }
-//     ],
-//     2: [
-//         { name: 'Mike Brown', position: 'Project Manager', capacity: 1.0 },
-//         { name: 'Sarah Davis', position: 'Data Analyst', capacity: 0.7 }
-//     ]
-//     };
+    return {
+        employeeId: employee.id,
+        name: employee.name,
+        capacity: capacity,
+        fit: fit,
+        vacationDays: vacationDays,
+        effectiveCapacity: effectiveCapacity,
+        revenue: revenue,
+        cost: cost,
+        profit: profit
+    };
+}
+function showEmployeesModal(projectId, projectName) {
     
-//     const employees = projectEmployees[projectId] || [];
-//     const tbody = document.getElementById('employeesListBody');
+    const monthKey = getCurrentMonthKey();
     
-//     if (tbody) {
-//     tbody.innerHTML = employees.map(emp => `
-//         <tr>
-//         <td>${emp.name}</td>
-//         <td>${emp.position}</td>
-//         <td>${emp.capacity}</td>
-//         </tr>
-//     `).join('');
-//     }
-// }
-
-// // Рендер таблицы с кнопкой в колонке Employees
-// function renderProjectsTable() {
-//     const monthKey = getCurrentMonthKey();
-//     const monthData = projectsDataByMonth[monthKey];
-//     const projects = monthData ? monthData.projects : [];
     
-//     const tbody = document.querySelector('.projects__table tbody');
-//     if (!tbody) return;
-
-//     tbody.innerHTML = projects.map(project => `
-//     <tr data-project-id="${project.id}">
-//         <td>${escapeHtml(project.companyName)}</td>
-//         <td>${escapeHtml(project.projectName)}</td>
-//         <td>$${project.budget.toLocaleString()}</td>
-//         <td>${project.employeeCapacity}</td>
-//         <td class="employees-cell">
-//         <button class="employees-btn" data-project-id="${project.id}" data-project-name="${escapeHtml(project.projectName)}">
-//             Show Employees<br>
-//             <i class="fa-solid fa-users"></i> (${project.employees})
-//         </button>
-//         </td>
-//         <td>$${project.estimatedIncome.toLocaleString()}</td>
-//         <td>
-//         <button class="edit-btn" data-id="${project.id}">
-//             <i class="fa-solid fa-pen"></i>
-//         </button>
-//         <button class="delete-btn" data-id="${project.id}">
-//             <i class="fa-solid fa-trash"></i>
-//         </button>
-//         </td>
-//     </tr>
-//     `).join('');
-        
-//   // Добавляем обработчики на кнопки Employees
-//     document.querySelectorAll('.employees-btn').forEach(btn => {
-//     btn.addEventListener('click', (e) => {
-//         e.stopPropagation();
-//         const projectId = btn.dataset.projectId;
-//         const projectName = btn.dataset.projectName;
-//         showEmployeesModal(projectId, projectName);
-//     });
-//     });
+    const projectAssignments = assignments.filter(a => a.projectId == projectId);
     
-//     updateTotalIncome(projects);
-// }
-
-// // Sorted
-
-// // Состояние сортировки
-// let sortConfig = {
-//     key: null,      // поле для сортировки
-//     direction: 'asc' // 'asc' или 'desc'
-// };
-
-// // Функция сортировки
-// function sortProjects(projects, sortKey, direction) {
-//     const sorted = [...projects];
     
-//     sorted.sort((a, b) => {
-//         let aVal = a[sortKey];
-//         let bVal = b[sortKey];
-        
-//         // Для строк
-//         if (typeof aVal === 'string') {
-//             aVal = aVal.toLowerCase();
-//             bVal = bVal.toLowerCase();
-//         }
-        
-//         if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-//         if (aVal > bVal) return direction === 'asc' ? 1 : -1;
-//         return 0;
-//     });
+    projectAssignments.sort((a, b) => {
+        const empA = employeesData.find(e => e.id === a.employeeId);
+        const empB = employeesData.find(e => e.id === b.employeeId);
+        return (empA?.name || '').localeCompare(empB?.name || '');
+    });
     
-//     return sorted;
-// }
-
-// // Рендер таблицы с сортировкой
-// function renderProjectsTable() {
-//     const monthKey = getCurrentMonthKey();
-//     const monthData = projectsDataByMonth[monthKey];
-//     let projects = monthData ? monthData.projects : [];
     
-//     // ПРИМЕНЯЕМ СОРТИРОВКУ
-//     if (sortConfig.key) {
-//         projects = sortProjects(projects, sortConfig.key, sortConfig.direction);
-//     }
+    let rowsHtml = '';
+    if (projectAssignments.length === 0) {
+        rowsHtml = '<tr><td colspan="10" style="text-align:center; padding:40px;">No employees assigned to this project</td></tr>';
+    } else {
+        rowsHtml = projectAssignments.map(assignment => {
+            const employee = employeesData.find(e => e.id === assignment.employeeId);
+            if (!employee) return '';
+            const details = calculateEmployeeDetails(employee, assignment, projectId, monthKey);
+            const profitClass = details.profit >= 0 ? 'profit-positive' : 'profit-negative';
+            return `
+                <tr>
+                    <td><a href="#" class="employee-name-link" data-id="${employee.id}">${escapeHtml(employee.name)}</a></td>
+                    <td class="capacity-cell">${details.capacity.toFixed(2)}</td>
+                    <td class="fit-cell">${details.fit.toFixed(2)}</td>
+                    <td class="vacation-cell">${details.vacationDays}</td>
+                    <td class="effective-cell">${details.effectiveCapacity.toFixed(3)}</td>
+                    <td class="revenue-cell">$${details.revenue.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="cost-cell">$${details.cost.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="${profitClass}">${details.profit >= 0 ? '$' : '-$'}${Math.abs(details.profit).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td class="actions-cell">
+                        <button class="edit-assignment-btn" data-employee-id="${employee.id}" data-project-id="${projectId}">
+                            <i class="fa-solid fa-pen"></i>
+                            Edit
+                        </button>
+                        <button class="unassign-btn" data-employee-id="${employee.id}" data-project-id="${projectId}">
+                            <i class="fa-solid fa-user-minus"></i>
+                            Unassign
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
     
-//     const tbody = document.querySelector('.projects__table tbody');
-//     if (!tbody) return;
+    // Modal
+    const modal = document.createElement('div');
+    modal.className = 'employees-modal';
+    modal.innerHTML = `
+        <div class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3><i class="fa-solid fa-users"></i> ${escapeHtml(projectName)} - Employee Details</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <table class="employees-details-table">
+                        <thead>
+                            <tr>
+                                <th>Employee Name</th>
+                                <th>Assigned Cap.</th>
+                                <th>Fit Coeff.</th>
+                                <th>Vacation Days</th>
+                                <th>Effective Cap.</th>
+                                <th>Revenue</th>
+                                <th>Cost</th>
+                                <th>Profit</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeesModalBody">
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-add-employee">+ Assign Employee</button>
+                </div>
+            </div>
+        </div>
+    `;
     
-//     if (projects.length === 0) {
-//         tbody.innerHTML = '<tr><td colspan="7">No projects for this period</td></tr>';
-//         updateTotalIncome(0);
-//         return;
-//     }
+    document.body.appendChild(modal);
     
-//     tbody.innerHTML = projects.map(project => `
-//         <tr>
-//             <td>${escapeHtml(project.companyName)}</td>
-//             <td>${escapeHtml(project.projectName)}</td>
-//             <td>$${project.budget.toLocaleString()}</td>
-//             <td>${project.employeeCapacity}</td>
-//             <td>
-//                 <button class="employees-btn" data-project-id="${project.id}" data-project-name="${escapeHtml(project.projectName)}">
-//                     Show Employees<br>
-//                     <i class="fa-solid fa-users"></i> (${project.employees})
-//                 </button>
-//             </td>
-//             <td>$${project.estimatedIncome.toLocaleString()}</td>
-//             <td>
-//                 <button class="edit-btn"><i class="fa-solid fa-pen"></i></button>
-//                 <button class="delete-btn"><i class="fa-solid fa-trash"></i></button>
-//             </td>
-//         </tr>
-//     `).join('');
-// }
+    
+    const closeBtn = modal.querySelector('.modal-close');
+    const overlay = modal.querySelector('.modal-overlay');
+    closeBtn.onclick = () => modal.remove();
+    overlay.onclick = (e) => {
+        if (e.target === overlay) modal.remove();
+    };
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    });
+    
+    
+    modal.querySelectorAll('.employee-name-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const empId = link.dataset.id;
+            alert(`Action menu for employee ${empId} – можно реализовать позже`);
+        });
+    });
+    
+    
+    modal.querySelectorAll('.edit-assignment-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const empId = btn.dataset.employeeId;
+            const projId = btn.dataset.projectId;
+            alert(`Edit assignment for employee ${empId} on project ${projId} – будет реализовано`);
+        });
+    });
+    modal.querySelectorAll('.unassign-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const empId = btn.dataset.employeeId;
+            const projId = btn.dataset.projectId;
+            if (confirm(`Unassign employee ${empId} from project?`)) {
+                
+                const index = assignments.findIndex(a => a.employeeId == empId && a.projectId == projId);
+                if (index !== -1) assignments.splice(index, 1);
+                modal.remove();
+                
+                showEmployeesModal(projectId, projectName);
+            }
+        });
+    });
+    
+    
+    modal.querySelector('.btn-add-employee').addEventListener('click', () => {
+    });
+}

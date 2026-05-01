@@ -417,11 +417,138 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     border-radius: 4px;
     color: #fdecec;
 }
-.delete-btn:hover {
+.delete-btn:hover, .unassign-btn:hover {
     background-color: #a72f2f;
 }
-.delete-btn:hover {
+.delete-btn:active, .unassign-btn:active {
     background-color: #772222;
+}
+/* Employees Modal */
+.employees-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    z-index: 2000;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-container {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 20px;
+    box-shadow: 0 20px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.employees-details-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.employees-details-table th,
+.employees-details-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.employees-details-table th {
+    background: #f8fafc;
+    font-weight: 600;
+}
+
+.profit-positive {
+    color: #10b981;
+    font-weight: 600;
+}
+.profit-negative {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.employee-name-link {
+    color: #3b82f6;
+    text-decoration: none;
+    cursor: pointer;
+}
+.employee-name-link:hover {
+    text-decoration: underline;
+}
+
+.modal-footer {
+    margin-top: 20px;
+    text-align: right;
+}
+.btn-add-employee {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.edit-assignment-btn, .unassign-btn {
+    width: 80px;
+    height: 30px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.edit-assignment-btn {
+    background-color: #3b82f6;
+    color: #ebf2fe;
+}
+.edit-assignment-btn:hover {
+    background-color: #234e93;
+    color: #ebf2fe;
+}
+.edit-assignment-btn:active {
+    background-color: #112749;
+    color: #ebf2fe;
+}
+.unassign-btn {
+    background-color: #ef4444;
+    color: #fdecec;
+}
+.actions-cell {
+    display: flex;
+    gap: 8px;
+    align-items: center;
 }
 
 .sortable {
