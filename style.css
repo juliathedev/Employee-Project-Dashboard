@@ -250,6 +250,12 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     padding: 8px 12px;
     cursor: pointer;
 }
+.employees-btn:hover {
+    background-color: #301c89;
+}
+.employees-btn:active{
+    background-color: #180e44;
+}
 .positive-income {
     color: rgb(48, 154, 48);
     font-weight: 600;

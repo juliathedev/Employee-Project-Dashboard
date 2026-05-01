@@ -77,7 +77,12 @@ function renderProjectRow(project) {
             <td>${escapeHtml(project.companyName)}</td>
             <td>${escapeHtml(project.projectName)}</td>
             <td>$${project.budget.toLocaleString()}</td>
-            <td>${project.employeeCapacity}</td>
+            <td>
+            <button class="employees-btn" data-project-id="${project.id}" data-project-name="${escapeHtml(project.projectName)}">
+                Show Employees<br>
+                <i class="fa-solid fa-users"></i> (${project.employees})
+            </button>
+            </td>
             <td>${project.employees}</td>
             <td>$${project.estimatedIncome.toLocaleString()}</td>
             <td>
