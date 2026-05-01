@@ -550,6 +550,42 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     gap: 8px;
     align-items: center;
 }
+.employees__table .editable-position,
+.employees__table .editable-salary,
+.employees__table .editable-firstname,
+.employees__table .editable-lastname {
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.employees__table .editable-position:hover,
+.employees__table .editable-salary:hover {
+    background: #f0f0f0;
+}
+.actions-cell {
+    white-space: nowrap;
+}
+.actions-cell button {
+    margin: 0 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+.assign-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.show-assignments-btn {
+    background: #eef2ff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+}
+.profit-positive { color: #10b981; font-weight: bold; }
+.profit-negative { color: #ef4444; font-weight: bold; }
 
 .sortable {
     position: relative;

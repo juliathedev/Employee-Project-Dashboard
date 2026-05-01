@@ -58,11 +58,11 @@ function getCurrentMonthKey() {
 }
 
 const employeesData = [
-    { id: 101, name: 'John Smith', position: 'Senior Developer', salary: 5000 },
-    { id: 102, name: 'Anna Lee', position: 'QA Engineer', salary: 3500 },
-    { id: 103, name: 'Mike Brown', position: 'Project Manager', salary: 6200 },
-    { id: 104, name: 'Sarah Davis', position: 'Data Analyst', salary: 4800 },
-    { id: 105, name: 'David Wilson', position: 'Junior Developer', salary: 2500 }
+    { id: 101, firstName: 'John', lastName: 'Smith', dateOfBirth: '1990-05-15', position: 'Senior Developer', salary: 5000 },
+    { id: 102, firstName: 'Anna', lastName: 'Lee', dateOfBirth: '1995-08-22', position: 'QA Engineer', salary: 3500 },
+    { id: 103, firstName: 'Mike', lastName: 'Brown', dateOfBirth: '1985-11-02', position: 'Project Manager', salary: 6200 },
+    { id: 104, firstName: 'Sarah', lastName: 'Davis', dateOfBirth: '1992-03-10', position: 'Data Analyst', salary: 4800 },
+    { id: 105, firstName: 'David', lastName: 'Wilson', dateOfBirth: '1988-07-19', position: 'Junior Developer', salary: 2500 }
 ];
 
 const fitCoefficients = {
@@ -660,3 +660,555 @@ function showEmployeesModal(projectId, projectName) {
     modal.querySelector('.btn-add-employee').addEventListener('click', () => {
     });
 }
+// ==========  Employees View ========
+// ==== Employee Table Display ====
+function calculateAge(birthDateStr) {
+    const birth = new Date(birthDateStr);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+}
+
+function getTotalEmployeeCapacity(employeeId, monthKey) {
+    const empAssignments = assignments.filter(a => a.employeeId === employeeId);
+    return empAssignments.reduce((sum, a) => sum + a.capacity, 0);
+}
+
+function getEmployeeProjectedIncome(employeeId, monthKey) {
+    const empAssignments = assignments.filter(a => a.employeeId === employeeId);
+    let totalProfit = 0;
+    for (const assign of empAssignments) {
+        const project = findProjectById(assign.projectId, monthKey);
+        if (!project) continue;
+        const employee = employeesData.find(e => e.id === employeeId);
+        if (!employee) continue;
+        const fit = fitCoefficients[assign.projectId]?.[employee.position] || 1.0;
+        const vacationDays = (vacations[monthKey]?.[employee.id]) || 0;
+        const workingDays = 22; // или функция getWorkingDaysInMonth
+        const vacationFactor = 1 - (vacationDays / workingDays);
+        const effectiveCapacity = assign.capacity * fit * vacationFactor;
+        const revenue = effectiveCapacity * employee.salary * 1.2;
+        const cost = assign.capacity * employee.salary;
+        totalProfit += (revenue - cost);
+    }
+    return totalProfit;
+}
+
+function findProjectById(projectId, monthKey) {
+    const monthData = projectsDataByMonth[monthKey];
+    if (!monthData) return null;
+    return monthData.projects.find(p => p.id === projectId);
+}
+
+function renderEmployeesTable() {
+    const monthKey = getCurrentMonthKey();
+    const tbody = document.querySelector('.employees__table tbody');
+    if (!tbody) return;
+
+    let employees = [...employeesData];
+
+    
+    if (empSortConfig.key) {
+        employees = sortEmployees(employees, empSortConfig.key, empSortConfig.direction);
+    }
+
+    
+    employees = filterEmployees(employees);
+
+    if (employees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No employees found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = employees.map(emp => {
+        const age = calculateAge(emp.dateOfBirth);
+        const totalCap = getTotalEmployeeCapacity(emp.id, monthKey);
+        const isOverloaded = totalCap >= 1.5;
+        const projectedIncome = getEmployeeProjectedIncome(emp.id, monthKey);
+        const incomeClass = projectedIncome >= 0 ? 'profit-positive' : 'profit-negative';
+        const assignmentsCount = assignments.filter(a => a.employeeId === emp.id).length;
+        const capacityDisplay = `${totalCap.toFixed(1)}/1.5`;
+
+        
+        const showAssignmentsBtn = `
+            <button class="show-assignments-btn" data-employee-id="${emp.id}">
+                <i class="fa-solid fa-briefcase"></i> Show Assignments (${assignmentsCount})<br>${capacityDisplay}
+            </button>
+        `;
+
+        return `
+            <tr data-employee-id="${emp.id}">
+                <td class="editable-firstname" data-id="${emp.id}" data-field="firstName">${escapeHtml(emp.firstName)}</td>
+                <td class="editable-lastname" data-id="${emp.id}" data-field="lastName">${escapeHtml(emp.lastName)}</td>
+                <td>${age}</td>
+                <td class="editable-position" data-id="${emp.id}" data-field="position">${escapeHtml(emp.position)}</td>
+                <td class="editable-salary" data-id="${emp.id}" data-field="salary">${formatCurrency(emp.salary)}</td>
+                <td>${showAssignmentsBtn}</td>
+                <td class="${incomeClass}">${formatCurrency(projectedIncome)}</td>
+                <td class="actions-cell">
+                    <button class="availability-btn" data-id="${emp.id}" title="Vacation Calendar"><i class="fa-solid fa-calendar-alt"></i></button>
+                    <button class="assign-btn" data-id="${emp.id}" ${isOverloaded ? 'disabled' : ''} title="Assign to project"><i class="fa-solid fa-user-plus"></i></button>
+                    <button class="delete-employee-btn" data-id="${emp.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    
+    attachInlineEditing();
+    
+    attachEmployeeActionButtons();
+}
+let empSortConfig = { key: null, direction: 'asc' };
+let empFilters = {
+    firstName: '',
+    lastName: '',
+    position: '',
+    projectId: ''
+};
+
+function sortEmployees(employees, key, direction) {
+    const sorted = [...employees];
+    sorted.sort((a, b) => {
+        let aVal, bVal;
+        if (key === 'age') {
+            aVal = calculateAge(a.dateOfBirth);
+            bVal = calculateAge(b.dateOfBirth);
+        } else if (key === 'projectIncome') {
+            aVal = getEmployeeProjectedIncome(a.id, getCurrentMonthKey());
+            bVal = getEmployeeProjectedIncome(b.id, getCurrentMonthKey());
+        } else if (key === 'salary') {
+            aVal = a.salary;
+            bVal = b.salary;
+        } else if (key === 'firstName') {
+            aVal = a.firstName.toLowerCase();
+            bVal = b.firstName.toLowerCase();
+        } else if (key === 'lastName') {
+            aVal = a.lastName.toLowerCase();
+            bVal = b.lastName.toLowerCase();
+        } else if (key === 'position') {
+            aVal = a.position.toLowerCase();
+            bVal = b.position.toLowerCase();
+        } else {
+            return 0;
+        }
+        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+    return sorted;
+}
+
+function filterEmployees(employees) {
+    return employees.filter(emp => {
+        if (empFilters.firstName && !emp.firstName.toLowerCase().includes(empFilters.firstName.toLowerCase())) return false;
+        if (empFilters.lastName && !emp.lastName.toLowerCase().includes(empFilters.lastName.toLowerCase())) return false;
+        if (empFilters.position && emp.position !== empFilters.position) return false;
+        if (empFilters.projectId) {
+            const hasProject = assignments.some(a => a.employeeId === emp.id && a.projectId == empFilters.projectId);
+            if (!hasProject) return false;
+        }
+        return true;
+    });
+}
+
+function initEmployeeSorting() {
+    const headers = document.querySelectorAll('.employees__table .sortable');
+    headers.forEach(header => {
+        const icon = header.querySelector('.fa-arrow-down-wide-short');
+        if (!icon) return;
+        icon.style.cursor = 'pointer';
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sortKey = header.dataset.sort;
+            if (empSortConfig.key === sortKey) {
+                empSortConfig.direction = empSortConfig.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                empSortConfig.key = sortKey;
+                empSortConfig.direction = 'asc';
+            }
+            renderEmployeesTable();
+        });
+    });
+}
+
+function initEmployeeFilters() {
+    const filterIcons = document.querySelectorAll('.employees__table .filterable .fa-magnifying-glass');
+    filterIcons.forEach(icon => {
+        icon.style.cursor = 'pointer';
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const th = icon.closest('th');
+            const filterKey = th.dataset.filter;
+            createEmployeeFilterInput(filterKey, icon);
+        });
+    });
+}
+
+function createEmployeeFilterInput(filterKey, iconElement) {
+    // удаляем существующий инпут
+    const existing = document.querySelector('.employee-filter-input');
+    if (existing) existing.remove();
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = `Filter by ${filterKey}...`;
+    input.className = 'employee-filter-input';
+    input.value = empFilters[filterKey] || '';
+
+    const rect = iconElement.getBoundingClientRect();
+    input.style.position = 'absolute';
+    input.style.left = `${rect.left}px`;
+    input.style.top = `${rect.bottom + 5}px`;
+    input.style.zIndex = '1000';
+    input.style.padding = '6px';
+    input.style.border = '1px solid #ccc';
+    input.style.borderRadius = '6px';
+
+    input.addEventListener('input', (e) => {
+        empFilters[filterKey] = e.target.value;
+        renderEmployeesTable();
+    });
+
+    document.body.appendChild(input);
+    input.focus();
+
+    const removeOnClickOutside = (event) => {
+        if (!input.contains(event.target) && !iconElement.contains(event.target)) {
+            input.remove();
+            document.removeEventListener('click', removeOnClickOutside);
+        }
+    };
+    setTimeout(() => document.addEventListener('click', removeOnClickOutside), 0);
+}
+
+function attachInlineEditing() {
+    // Редактирование должности
+    document.querySelectorAll('.editable-position').forEach(cell => {
+        cell.style.cursor = 'pointer';
+        cell.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const employeeId = parseInt(cell.dataset.id);
+            const currentValue = cell.innerText.trim();
+            const select = document.createElement('select');
+            const positions = ['Junior', 'Middle', 'Senior', 'Lead', 'Architect', 'BO'];
+            positions.forEach(pos => {
+                const option = document.createElement('option');
+                option.value = pos;
+                option.textContent = pos;
+                if (pos === currentValue) option.selected = true;
+                select.appendChild(option);
+            });
+            cell.innerHTML = '';
+            cell.appendChild(select);
+            select.focus();
+            const update = () => {
+                const newValue = select.value;
+                if (newValue !== currentValue) {
+                    const emp = employeesData.find(e => e.id === employeeId);
+                    if (emp) emp.position = newValue;
+                    renderEmployeesTable(); // перерисовка с новыми данными
+                } else {
+                    cell.innerText = currentValue;
+                }
+            };
+            select.addEventListener('blur', update);
+            select.addEventListener('change', update);
+        });
+    });
+
+    // Редактирование зарплаты
+    document.querySelectorAll('.editable-salary').forEach(cell => {
+        cell.style.cursor = 'pointer';
+        cell.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const employeeId = parseInt(cell.dataset.id);
+            const currentValue = parseFloat(cell.innerText.replace(/[^0-9.-]/g, ''));
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.value = currentValue;
+            input.step = '100';
+            input.min = '0';
+            cell.innerHTML = '';
+            cell.appendChild(input);
+            input.focus();
+            const update = () => {
+                let newValue = parseFloat(input.value);
+                if (isNaN(newValue) || newValue < 0) newValue = currentValue;
+                if (newValue !== currentValue) {
+                    const emp = employeesData.find(e => e.id === employeeId);
+                    if (emp) emp.salary = newValue;
+                    renderEmployeesTable();
+                } else {
+                    cell.innerText = formatCurrency(currentValue);
+                }
+            };
+            input.addEventListener('blur', update);
+            input.addEventListener('keypress', (e) => { if (e.key === 'Enter') update(); });
+        });
+    });
+}
+function attachEmployeeActionButtons() {
+    // Availability
+    document.querySelectorAll('.availability-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const empId = btn.dataset.id;
+            openVacationCalendar(empId);
+        });
+    });
+
+    // Assign
+    document.querySelectorAll('.assign-btn:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const empId = btn.dataset.id;
+            openAssignmentPopup(empId);
+        });
+    });
+
+    // Delete
+    document.querySelectorAll('.delete-employee-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const empId = parseInt(btn.dataset.id);
+            if (confirm('Delete employee permanently? All assignments will be lost.')) {
+                const index = employeesData.findIndex(e => e.id === empId);
+                if (index !== -1) employeesData.splice(index, 1);
+                // удаляем назначения
+                for (let i = assignments.length-1; i >= 0; i--) {
+                    if (assignments[i].employeeId === empId) assignments.splice(i,1);
+                }
+                renderEmployeesTable();
+                renderProjectsTable(); // обновить таблицу проектов (могли измениться Employee count)
+            }
+        });
+    });
+
+    // Show Assignments
+    document.querySelectorAll('.show-assignments-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const empId = btn.dataset.employeeId;
+            showEmployeeAssignmentsModal(parseInt(empId));
+        });
+    });
+}
+
+function showEmployeeAssignmentsModal(employeeId) {
+    const employee = employeesData.find(e => e.id === employeeId);
+    if (!employee) return;
+    const monthKey = getCurrentMonthKey();
+    const empAssignments = assignments.filter(a => a.employeeId === employeeId);
+    
+    let rowsHtml = '';
+    if (empAssignments.length === 0) {
+        rowsHtml = '<tr><td colspan="6">No projects assigned</td></tr>';
+    } else {
+        rowsHtml = empAssignments.map(assign => {
+            const project = findProjectById(assign.projectId, monthKey);
+            if (!project) return '';
+            const fit = fitCoefficients[assign.projectId]?.[employee.position] || 1.0;
+            const vacationDays = (vacations[monthKey]?.[employeeId]) || 0;
+            const workingDays = 22;
+            const vacationFactor = 1 - (vacationDays / workingDays);
+            const effectiveCapacity = assign.capacity * fit * vacationFactor;
+            const revenue = effectiveCapacity * employee.salary * 1.2;
+            const cost = assign.capacity * employee.salary;
+            const profit = revenue - cost;
+            const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
+            return `
+                <tr>
+                    <td>${escapeHtml(project.projectName)}</td>
+                    <td>${assign.capacity.toFixed(2)}</td>
+                    <td>${fit.toFixed(2)}</td>
+                    <td>${vacationDays}</td>
+                    <td>${effectiveCapacity.toFixed(3)}</td>
+                    <td class="${profitClass}">${formatCurrency(profit)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    const modalHtml = `
+        <div class="employees-modal" id="empAssignModal">
+            <div class="modal-overlay"></div>
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h3>${escapeHtml(employee.firstName)} ${escapeHtml(employee.lastName)} - Assignments</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <table class="assignments-table">
+                        <thead>
+                            <tr><th>Project</th><th>Capacity</th><th>Fit</th><th>Vacation Days</th><th>Effective Cap.</th><th>Profit</th></tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = document.getElementById('empAssignModal');
+    const closeModal = () => modal.remove();
+    modal.querySelector('.modal-close').onclick = closeModal;
+    modal.querySelector('.modal-overlay').onclick = closeModal;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    
+    initSelectors();
+    initSorting();
+    initEmployeeSorting();
+    initEmployeeFilters();
+    renderProjectsTable();
+    renderEmployeesTable();
+});
+
+function initViewToggle() {
+    const projectsSection = document.querySelector('.projects');
+    const employeesSection = document.querySelector('.employees');
+    const toggleBtns = document.querySelectorAll('.toggle-btn');
+
+    if (!projectsSection || !employeesSection) return;
+
+    function setActiveView(view) {
+        if (view === 'projects') {
+            projectsSection.classList.remove('hidden');
+            employeesSection.classList.add('hidden');
+            renderProjectsTable();
+        } else {
+            projectsSection.classList.add('hidden');
+            employeesSection.classList.remove('hidden');
+            renderEmployeesTable();
+        
+            if (!window.employeeTableInitialized) {
+                initEmployeeSorting();
+                initEmployeeFilters();
+                window.employeeTableInitialized = true;
+            }
+        }
+    }
+
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const view = btn.getAttribute('data-view');
+            if (view === 'projects') setActiveView('projects');
+            else if (view === 'employees') setActiveView('employees');
+    
+            toggleBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    
+    setActiveView('projects');
+}
+
+function initSelectors() {
+    const monthSelect = document.getElementById('months');
+    const yearSelect = document.getElementById('years');
+
+    function refreshCurrentView() {
+        const projectsVisible = !document.querySelector('.projects')?.classList.contains('hidden');
+        if (projectsVisible) {
+            renderProjectsTable();
+        } else {
+            renderEmployeesTable();
+        }
+    }
+
+    if (monthSelect) {
+        monthSelect.addEventListener('change', (e) => {
+            currentMonth = e.target.value;
+            refreshCurrentView();
+        });
+    }
+
+    if (yearSelect) {
+        yearSelect.addEventListener('change', (e) => {
+            currentYear = e.target.value;
+            refreshCurrentView();
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initSelectors();
+    initSorting();            
+    initViewToggle();         
+    
+});
+
+function initSidebarNavigation() {
+    const projectsSection = document.querySelector('.projects');
+    const employeesSection = document.querySelector('.employees');
+    const menuLinks = document.querySelectorAll('.menu__link');
+
+    
+    function switchToView(view) {
+        
+        if (projectsSection) projectsSection.classList.add('hidden');
+        if (employeesSection) employeesSection.classList.add('hidden');
+
+        // Показываем нужную
+        if (view === 'projects') {
+            if (projectsSection) projectsSection.classList.remove('hidden');
+            renderProjectsTable(); 
+        } else if (view === 'employees') {
+            if (employeesSection) employeesSection.classList.remove('hidden');
+            renderEmployeesTable(); 
+            
+            if (!window.employeeTableInitialized) {
+                if (typeof initEmployeeSorting === 'function') initEmployeeSorting();
+                if (typeof initEmployeeFilters === 'function') initEmployeeFilters();
+                window.employeeTableInitialized = true;
+            }
+        } else if (view === 'home') {
+            if (projectsSection) projectsSection.classList.remove('hidden');
+            renderProjectsTable();
+        }
+
+        
+        menuLinks.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href');
+            if (view === 'home' && (href === '#' || href === '#home')) {
+                link.classList.add('active');
+            } else if (view === 'projects' && href === '#projects') {
+                link.classList.add('active');
+            } else if (view === 'employees' && href === '#employees') {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    
+    menuLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault(); // не переходить по ссылке
+            const href = link.getAttribute('href');
+            if (href === '#projects') {
+                switchToView('projects');
+            } else if (href === '#employees') {
+                switchToView('employees');
+            } else {
+                
+                switchToView('home');
+            }
+        });
+    });
+
+    
+    switchToView('projects');
+}
+function formatCurrency(value) {
+    if (value === undefined || value === null) return '$0';
+    return value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initSelectors();
+    initSorting();          
+    initSidebarNavigation(); 
+    
+});
