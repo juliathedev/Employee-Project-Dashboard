@@ -81,15 +81,38 @@ function renderProjectRow(project) {
             <td>${project.employees}</td>
             <td>$${project.estimatedIncome.toLocaleString()}</td>
             <td>
-                <button class="edit-btn" data-id="${project.id}">
-                    <i class="fa-solid fa-pen"></i>
-                </button>
                 <button class="delete-btn" data-id="${project.id}">
                     <i class="fa-solid fa-trash"></i>
+                    Delete
                 </button>
             </td>
         </tr>
     `;
+}
+
+// ======= PROJECT DELETE =====
+document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const projectId = parseInt(btn.dataset.id);
+        deleteProject(projectId);
+    });
+});
+
+function deleteProject(projectId) {
+    const confirmDelete = confirm('Are you sure you want to delete this project?');
+    if (!confirmDelete) return;
+
+    const monthKey = getCurrentMonthKey();
+    const monthData = projectsDataByMonth[monthKey];
+    if (!monthData) return;
+
+    const projects = monthData.projects;
+    const index = projects.findIndex(p => p.id === projectId);
+    if (index !== -1) {
+        projects.splice(index, 1);
+        renderProjectsTable();
+    }
 }
 
 // Render Project Table
@@ -119,6 +142,14 @@ function renderProjectsTable() {
         const projectName = btn.dataset.projectName;
         showEmployeesModal(projectId, projectName);
     });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const projectId = parseInt(btn.dataset.id);
+            deleteProject(projectId);
+        });
     });
 }
 

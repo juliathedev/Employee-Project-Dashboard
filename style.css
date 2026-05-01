@@ -402,6 +402,21 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     background: #94a3b8;
     cursor: not-allowed;
 }
+.delete-btn {
+    width: 80px;
+    height: 40px;
+    cursor: pointer;
+    border: none;
+    background-color: #ef4444;
+    border-radius: 4px;
+    color: #fdecec;
+}
+.delete-btn:hover {
+    background-color: #a72f2f;
+}
+.delete-btn:hover {
+    background-color: #772222;
+}
 
 .sortable {
     position: relative;
