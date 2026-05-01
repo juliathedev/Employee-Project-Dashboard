@@ -181,7 +181,7 @@ h3 {
 .hidden {
     display: none;
 }
-.projects__header {
+.table__header {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -219,7 +219,7 @@ h1 {
     font-weight: 600;
 }
 
-.projects__table {
+table {
     margin-top: 60px;
     border-collapse: collapse;
     width: 100%;
@@ -232,7 +232,7 @@ th, td {
 }
 table tr:first-child th:first-child { border-top-left-radius: 12px; }
 table tr:first-child th:last-child { border-top-right-radius: 12px; }
-.projects__table__header {
+.table__title {
     background-color: hsla(251, 78%, 54%, 0.08);
 }
 .projects__total-income {

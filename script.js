@@ -730,6 +730,7 @@ function renderEmployeesTable() {
         const incomeClass = projectedIncome >= 0 ? 'profit-positive' : 'profit-negative';
         const assignmentsCount = assignments.filter(a => a.employeeId === emp.id).length;
         const capacityDisplay = `${totalCap.toFixed(1)}/1.5`;
+        const estimatedPayment = getEmployeeEstimatedPayment(emp.id, monthKey);
 
         
         const showAssignmentsBtn = `
@@ -745,6 +746,7 @@ function renderEmployeesTable() {
                 <td>${age}</td>
                 <td class="editable-position" data-id="${emp.id}" data-field="position">${escapeHtml(emp.position)}</td>
                 <td class="editable-salary" data-id="${emp.id}" data-field="salary">${formatCurrency(emp.salary)}</td>
+                <td>${formatCurrency(estimatedPayment)}</td>
                 <td>${showAssignmentsBtn}</td>
                 <td class="${incomeClass}">${formatCurrency(projectedIncome)}</td>
                 <td class="actions-cell">
@@ -761,6 +763,51 @@ function renderEmployeesTable() {
     
     attachEmployeeActionButtons();
 }
+
+// Estimated Payment
+
+function getEmployeeEstimatedPayment(employeeId, monthKey) {
+    const employee = employeesData.find(e => e.id == employeeId);
+    if (!employee) return 0;
+    const empAssignments = assignments.filter(a => a.employeeId == employeeId);
+    if (empAssignments.length === 0) {
+        // бенч
+        return employee.salary * 0.5;
+    }
+    let total = 0;
+    for (const assign of empAssignments) {
+        const capacityForPay = Math.max(0.5, assign.capacity); // не меньше 0.5
+        total += employee.salary * capacityForPay;
+    }
+    return total;
+}
+
+// Projected Income
+function getEmployeeProjectedIncome(employeeId, monthKey) {
+    const employee = employeesData.find(e => e.id == employeeId);
+    if (!employee) return 0;
+    const empAssignments = assignments.filter(a => a.employeeId == employeeId);
+    let totalProfit = 0;
+    for (const assign of empAssignments) {
+        
+        const costCapacity = Math.max(0.5, assign.capacity);
+        const cost = costCapacity * employee.salary;
+        
+        // Effective capacity (c учётом fit и отпуска)
+        const fit = fitCoefficients[assign.projectId]?.[employee.position] || 1.0;
+        const vacationDays = (vacations[monthKey]?.[employeeId]) || 0;
+        const workingDays = 22; // или более точное значение
+        const vacationFactor = 1 - (vacationDays / workingDays);
+        const effectiveCapacity = assign.capacity * fit * vacationFactor;
+        
+        const revenue = effectiveCapacity * employee.salary * 1.2;
+        const profit = revenue - cost;
+        totalProfit += profit;
+    }
+    return totalProfit;
+}
+
+
 let empSortConfig = { key: null, direction: 'asc' };
 let empFilters = {
     firstName: '',
@@ -779,6 +826,9 @@ function sortEmployees(employees, key, direction) {
         } else if (key === 'projectIncome') {
             aVal = getEmployeeProjectedIncome(a.id, getCurrentMonthKey());
             bVal = getEmployeeProjectedIncome(b.id, getCurrentMonthKey());
+        } else if (key === 'estimatedPayment') {
+            aVal = getEmployeeEstimatedPayment(a.id, monthKey);
+            bVal = getEmployeeEstimatedPayment(b.id, monthKey);
         } else if (key === 'salary') {
             aVal = a.salary;
             bVal = b.salary;
@@ -848,7 +898,6 @@ function initEmployeeFilters() {
 }
 
 function createEmployeeFilterInput(filterKey, iconElement) {
-    // удаляем существующий инпут
     const existing = document.querySelector('.employee-filter-input');
     if (existing) existing.remove();
 
@@ -885,7 +934,6 @@ function createEmployeeFilterInput(filterKey, iconElement) {
 }
 
 function attachInlineEditing() {
-    // Редактирование должности
     document.querySelectorAll('.editable-position').forEach(cell => {
         cell.style.cursor = 'pointer';
         cell.addEventListener('click', async (e) => {
@@ -909,7 +957,7 @@ function attachInlineEditing() {
                 if (newValue !== currentValue) {
                     const emp = employeesData.find(e => e.id === employeeId);
                     if (emp) emp.position = newValue;
-                    renderEmployeesTable(); // перерисовка с новыми данными
+                    renderEmployeesTable();
                 } else {
                     cell.innerText = currentValue;
                 }
@@ -1185,7 +1233,7 @@ function initSidebarNavigation() {
     
     menuLinks.forEach(link => {
         link.addEventListener('click', (e) => {
-            e.preventDefault(); // не переходить по ссылке
+            e.preventDefault();
             const href = link.getAttribute('href');
             if (href === '#projects') {
                 switchToView('projects');
