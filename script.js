@@ -58,11 +58,11 @@ function getCurrentMonthKey() {
 }
 
 const employeesData = [
-    { id: 101, firstName: 'John', lastName: 'Smith', dateOfBirth: '1990-05-15', position: 'Senior Developer', salary: 5000 },
-    { id: 102, firstName: 'Anna', lastName: 'Lee', dateOfBirth: '1995-08-22', position: 'QA Engineer', salary: 3500 },
-    { id: 103, firstName: 'Mike', lastName: 'Brown', dateOfBirth: '1985-11-02', position: 'Project Manager', salary: 6200 },
-    { id: 104, firstName: 'Sarah', lastName: 'Davis', dateOfBirth: '1992-03-10', position: 'Data Analyst', salary: 4800 },
-    { id: 105, firstName: 'David', lastName: 'Wilson', dateOfBirth: '1988-07-19', position: 'Junior Developer', salary: 2500 }
+    { id: 101, firstName: 'John', lastName: 'Smith', dateOfBirth: '1990-05-15', position: 'Senior', salary: 5000 },
+    { id: 102, firstName: 'Anna', lastName: 'Lee', dateOfBirth: '1995-08-22', position: 'Junior', salary: 3500 },
+    { id: 103, firstName: 'Mike', lastName: 'Brown', dateOfBirth: '1985-11-02', position: 'Lead', salary: 6200 },
+    { id: 104, firstName: 'Sarah', lastName: 'Davis', dateOfBirth: '1992-03-10', position: 'Middle', salary: 4800 },
+    { id: 105, firstName: 'David', lastName: 'Wilson', dateOfBirth: '1988-07-19', position: 'Architect', salary: 2500 }
 ];
 
 const fitCoefficients = {
@@ -548,7 +548,7 @@ function showEmployeesModal(projectId, projectName) {
             const profitClass = details.profit >= 0 ? 'profit-positive' : 'profit-negative';
             return `
                 <tr>
-                    <td><a href="#" class="employee-name-link" data-id="${employee.id}">${escapeHtml(employee.name)}</a></td>
+                    <td><a href="#" class="employee-name-link" data-id="${employee.id}">${escapeHtml(employee.firstName + ' ' + employee.lastName)}</a></td>
                     <td class="capacity-cell">${details.capacity.toFixed(2)}</td>
                     <td class="fit-cell">${details.fit.toFixed(2)}</td>
                     <td class="vacation-cell">${details.vacationDays}</td>

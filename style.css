@@ -523,13 +523,15 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     cursor: pointer;
 }
 .edit-assignment-btn, .unassign-btn {
-    width: 80px;
-    height: 30px;
-    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 12px;
 }
-.edit-assignment-btn {
+.employees-modal .edit-assignment-btn {
     background-color: #3b82f6;
     color: #ebf2fe;
 }
@@ -541,9 +543,15 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     background-color: #112749;
     color: #ebf2fe;
 }
-.unassign-btn {
+.employees-modal .unassign-btn {
     background-color: #ef4444;
     color: #fdecec;
+}
+.unassign-btn:hover {
+    background-color: #a72f2f;
+}
+.unassign-btn:active {
+    background-color: #772222;
 }
 .actions-cell {
     display: flex;
