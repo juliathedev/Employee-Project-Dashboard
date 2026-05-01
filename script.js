@@ -1260,3 +1260,207 @@ document.addEventListener('DOMContentLoaded', () => {
     initSidebarNavigation(); 
     
 });
+
+// ===== EMPLOYEE SLIDE PANEL =====
+// Panel elements
+const empPanel = document.getElementById('addEmployeePanel');
+const openEmpPanelBtn = document.querySelector('.employee-btn'); // кнопка "Add Employee"
+const closeEmpBtns = [document.getElementById('closeEmployeePanelBtn'), document.getElementById('cancelEmployeeBtn')];
+const empForm = document.getElementById('addEmployeeForm');
+
+// Form inputs
+const firstNameInput = document.getElementById('empFirstName');
+const lastNameInput = document.getElementById('empLastName');
+const dobInput = document.getElementById('empDob');
+const positionSelect = document.getElementById('empPosition');
+const salaryInput = document.getElementById('empSalary');
+
+// Errors
+const firstNameErr = document.getElementById('empFirstNameError');
+const lastNameErr = document.getElementById('empLastNameError');
+const dobErr = document.getElementById('empDobError');
+const positionErr = document.getElementById('empPositionError');
+const salaryErr = document.getElementById('empSalaryError');
+
+let empValidation = {
+    firstName: false,
+    lastName: false,
+    dob: false,
+    position: false,
+    salary: false
+};
+
+function updateEmployeeSubmitButton() {
+    const submitBtn = document.getElementById('submitEmployeeBtn');
+    const allValid = Object.values(empValidation).every(v => v === true);
+    if (submitBtn) submitBtn.disabled = !allValid;
+}
+
+// Validates
+function validateFirstName() {
+    const value = firstNameInput.value.trim();
+    const regex = /^[A-Za-z]{3,}$/;
+    if (!value) {
+        firstNameErr.textContent = 'First name is required';
+        firstNameInput.classList.add('error');
+        firstNameInput.classList.remove('valid');
+        return false;
+    }
+    if (!regex.test(value)) {
+        firstNameErr.textContent = 'Only letters, min 3 characters';
+        firstNameInput.classList.add('error');
+        firstNameInput.classList.remove('valid');
+        return false;
+    }
+    firstNameErr.textContent = '';
+    firstNameInput.classList.remove('error');
+    firstNameInput.classList.add('valid');
+    return true;
+}
+
+function validateLastName() {
+    const value = lastNameInput.value.trim();
+    const regex = /^[A-Za-z]{3,}$/;
+    if (!value) {
+        lastNameErr.textContent = 'Last name is required';
+        lastNameInput.classList.add('error');
+        lastNameInput.classList.remove('valid');
+        return false;
+    }
+    if (!regex.test(value)) {
+        lastNameErr.textContent = 'Only letters, min 3 characters';
+        lastNameInput.classList.add('error');
+        lastNameInput.classList.remove('valid');
+        return false;
+    }
+    lastNameErr.textContent = '';
+    lastNameInput.classList.remove('error');
+    lastNameInput.classList.add('valid');
+    return true;
+}
+
+function validateDob() {
+    const value = dobInput.value;
+    if (!value) {
+        dobErr.textContent = 'Date of birth is required';
+        dobInput.classList.add('error');
+        dobInput.classList.remove('valid');
+        return false;
+    }
+    const birth = new Date(value);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    if (age < 18) {
+        dobErr.textContent = `Age must be 18+. Current age: ${age}`;
+        dobInput.classList.add('error');
+        dobInput.classList.remove('valid');
+        return false;
+    }
+    dobErr.textContent = `✓ Valid (${age} years)`;
+    dobErr.style.color = '#10b981';
+    dobInput.classList.remove('error');
+    dobInput.classList.add('valid');
+    return true;
+}
+
+function validatePosition() {
+    const value = positionSelect.value;
+    if (!value) {
+        positionErr.textContent = 'Position is required';
+        positionSelect.classList.add('error');
+        positionSelect.classList.remove('valid');
+        return false;
+    }
+    positionErr.textContent = '';
+    positionSelect.classList.remove('error');
+    positionSelect.classList.add('valid');
+    return true;
+}
+
+function validateSalary() {
+    const value = salaryInput.value.trim();
+    if (!value) {
+        salaryErr.textContent = 'Salary is required';
+        salaryInput.classList.add('error');
+        salaryInput.classList.remove('valid');
+        return false;
+    }
+    const num = parseFloat(value);
+    if (isNaN(num) || num <= 0) {
+        salaryErr.textContent = 'Salary must be a positive number';
+        salaryInput.classList.add('error');
+        salaryInput.classList.remove('valid');
+        return false;
+    }
+    if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+        salaryErr.textContent = 'Max 2 decimal places';
+        salaryInput.classList.add('error');
+        salaryInput.classList.remove('valid');
+        return false;
+    }
+    salaryErr.textContent = '';
+    salaryInput.classList.remove('error');
+    salaryInput.classList.add('valid');
+    return true;
+}
+
+// Event Listeners
+firstNameInput.addEventListener('input', () => { empValidation.firstName = validateFirstName(); updateEmployeeSubmitButton(); });
+firstNameInput.addEventListener('blur', () => { empValidation.firstName = validateFirstName(); updateEmployeeSubmitButton(); });
+lastNameInput.addEventListener('input', () => { empValidation.lastName = validateLastName(); updateEmployeeSubmitButton(); });
+lastNameInput.addEventListener('blur', () => { empValidation.lastName = validateLastName(); updateEmployeeSubmitButton(); });
+dobInput.addEventListener('input', () => { empValidation.dob = validateDob(); updateEmployeeSubmitButton(); });
+dobInput.addEventListener('blur', () => { empValidation.dob = validateDob(); updateEmployeeSubmitButton(); });
+positionSelect.addEventListener('change', () => { empValidation.position = validatePosition(); updateEmployeeSubmitButton(); });
+salaryInput.addEventListener('input', () => { empValidation.salary = validateSalary(); updateEmployeeSubmitButton(); });
+salaryInput.addEventListener('blur', () => { empValidation.salary = validateSalary(); updateEmployeeSubmitButton(); });
+
+// Open panel
+function openEmployeePanel() {
+    empPanel.classList.add('open');
+    empForm.reset();
+    // Сброс классов и ошибок
+    [firstNameInput, lastNameInput, dobInput, positionSelect, salaryInput].forEach(inp => {
+        inp.classList.remove('error', 'valid');
+    });
+    [firstNameErr, lastNameErr, dobErr, positionErr, salaryErr].forEach(err => err.textContent = '');
+    empValidation = { firstName: false, lastName: false, dob: false, position: false, salary: false };
+    updateEmployeeSubmitButton();
+}
+
+// Close panel
+function closeEmployeePanel() {
+    empPanel.classList.remove('open');
+}
+
+
+if (openEmpPanelBtn) openEmpPanelBtn.addEventListener('click', openEmployeePanel);
+closeEmpBtns.forEach(btn => { if (btn) btn.addEventListener('click', closeEmployeePanel); });
+document.querySelector('.add-employee-panel .panel-overlay')?.addEventListener('click', closeEmployeePanel);
+
+// Add employee
+empForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const isFirstNameValid = validateFirstName();
+    const isLastNameValid = validateLastName();
+    const isDobValid = validateDob();
+    const isPositionValid = validatePosition();
+    const isSalaryValid = validateSalary();
+    
+    if (isFirstNameValid && isLastNameValid && isDobValid && isPositionValid && isSalaryValid) {
+        const newEmployee = {
+            id: Date.now(),
+            firstName: firstNameInput.value.trim(),
+            lastName: lastNameInput.value.trim(),
+            dateOfBirth: dobInput.value,
+            position: positionSelect.value,
+            salary: parseFloat(salaryInput.value)
+        };
+        employeesData.push(newEmployee);
+        renderEmployeesTable();
+        closeEmployeePanel();
+        alert(`Employee ${newEmployee.firstName} ${newEmployee.lastName} added!`);
+    }
+});
