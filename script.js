@@ -583,7 +583,7 @@ function showEmployeesModal(projectId, projectName) {
                 </div>
                 <div class="modal-body">
                     <table class="employees-details-table">
-                        <thead>
+                        <thead class="modal-header__head">
                             <tr>
                                 <th>Employee Name</th>
                                 <th>Assigned Cap.</th>
@@ -1100,7 +1100,19 @@ function showEmployeeAssignmentsModal(employeeId) {
                     <td>${fit.toFixed(2)}</td>
                     <td>${vacationDays}</td>
                     <td>${effectiveCapacity.toFixed(3)}</td>
+                    <td>${'$' + revenue.toFixed(2)} </td>
+                    <td>${cost}</td>
                     <td class="${profitClass}">${formatCurrency(profit)}</td>
+                    <td class="actions-cell">
+                        <button class="edit-assignment-btn  btn__action" data-employee-id="${employee.id}" data-project-id="${assign.projectId}">
+                            <i class="fa-solid fa-pen"></i>
+                            Edit
+                        </button>
+                        <button class="unassign-btn btn__action" data-employee-id="${employee.id}" data-project-id="${assign.projectId}">
+                            <i class="fa-solid fa-user-minus"></i>
+                            Unassign
+                        </button>
+                    </td>
                 </tr>
             `;
         }).join('');
@@ -1116,8 +1128,18 @@ function showEmployeeAssignmentsModal(employeeId) {
                 </div>
                 <div class="modal-body">
                     <table class="assignments-table">
-                        <thead>
-                            <tr><th>Project</th><th>Capacity</th><th>Fit</th><th>Vacation Days</th><th>Effective Cap.</th><th>Profit</th></tr>
+                        <thead class="modal-header__head">
+                            <tr>
+                                <th>Project</th>
+                                <th>Capacity</th>
+                                <th>Fit</th>
+                                <th>Vacation</th>
+                                <th>Effective</th>
+                                <th>Revenue</th>
+                                <th>Cost</th>
+                                <th>Profit</th>
+                                <th>Actions</th>
+                            </tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
                     </table>
@@ -1496,82 +1518,8 @@ empForm.addEventListener('submit', (e) => {
 });
 
 // Assign Employee to Project
-
-// function attachEmployeeActionButtons() {
-//     // === SHOW ASSIGNMENTS (кнопка в колонке Project) ===
-//     document.querySelectorAll('.show-assignments-btn').forEach(btn => {
-//         // Убираем старый обработчик, чтобы не дублировать
-//         btn.removeEventListener('click', handleShowAssignments);
-//         btn.addEventListener('click', handleShowAssignments);
-//     });
-
-//     // === ASSIGN (кнопка в колонке Actions) ===
-//     document.querySelectorAll('.assign-btn').forEach(btn => {
-//         btn.removeEventListener('click', handleAssign);
-//         btn.addEventListener('click', handleAssign);
-//     });
-
-//     // === AVAILABILITY ===
-//     document.querySelectorAll('.availability-btn').forEach(btn => {
-//         btn.removeEventListener('click', handleAvailability);
-//         btn.addEventListener('click', handleAvailability);
-//     });
-
-//     // === DELETE EMPLOYEE ===
-//     document.querySelectorAll('.delete-employee-btn').forEach(btn => {
-//         btn.removeEventListener('click', handleDeleteEmployee);
-//         btn.addEventListener('click', handleDeleteEmployee);
-//     });
-// }
-
-// // Отдельные обработчики
-// function handleShowAssignments(e) {
-//     e.stopPropagation();
-//     e.preventDefault();
-//     const btn = e.currentTarget;
-//     const empId = btn.dataset.employeeId;
-//     console.log('📋 Show assignments for employee:', empId);
-//     showEmployeeAssignmentsModal(parseInt(empId));
-// }
-
-// function handleAssign(e) {
-//     e.stopPropagation();
-//     e.preventDefault();
-//     const btn = e.currentTarget;
-//     const empId = btn.dataset.id;
-//     console.log('➕ Assign button clicked for employee:', empId);
-//     openAssignmentPopup(parseInt(empId));
-// }
-
-// function handleAvailability(e) {
-//     e.stopPropagation();
-//     e.preventDefault();
-//     const btn = e.currentTarget;
-//     const empId = btn.dataset.id;
-//     console.log('📅 Availability for employee:', empId);
-//     openVacationCalendar(empId);
-// }
-
-// function handleDeleteEmployee(e) {
-//     e.stopPropagation();
-//     e.preventDefault();
-//     const btn = e.currentTarget;
-//     const empId = parseInt(btn.dataset.id);
-//     if (confirm('Delete employee permanently? All assignments will be lost.')) {
-//         const index = employeesData.findIndex(emp => emp.id === empId);
-//         if (index !== -1) employeesData.splice(index, 1);
-//         // Удаляем назначения
-//         for (let i = assignments.length - 1; i >= 0; i--) {
-//             if (assignments[i].employeeId === empId) assignments.splice(i, 1);
-//         }
-//         renderEmployeesTable();
-//         renderProjectsTable();
-//     }
-// }
-// Переменные для текущего назначения
 let currentAssignEmployee = null;
 
-// Открыть попап назначения
 function openAssignmentPopup(employeeId) {
     const employee = employeesData.find(e => e.id == employeeId);
     if (!employee) return;
@@ -1581,12 +1529,12 @@ function openAssignmentPopup(employeeId) {
     const currentCapacity = getTotalEmployeeCapacity(employee.id, monthKey);
     const availableCapacity = Math.max(0, 1.5 - currentCapacity);
     
-    // Заполняем информацию о сотруднике
+    
     document.getElementById('assignEmployeeName').textContent = `${employee.firstName} ${employee.lastName}`;
     document.getElementById('assignCurrentCapacity').textContent = currentCapacity.toFixed(2);
     document.getElementById('assignAvailableCapacity').textContent = availableCapacity.toFixed(2);
     
-    // Заполняем список проектов
+    
     const projectSelect = document.getElementById('assignProjectSelect');
     const projects = projectsDataByMonth[monthKey]?.projects || [];
     projectSelect.innerHTML = '<option value="">Select project...</option>';
@@ -1597,7 +1545,7 @@ function openAssignmentPopup(employeeId) {
         projectSelect.appendChild(option);
     });
     
-    // Сброс слайдеров
+    
     const capacitySlider = document.getElementById('assignCapacity');
     capacitySlider.value = 0;
     capacitySlider.max = Math.min(1.5, availableCapacity + currentCapacity);
@@ -1605,7 +1553,7 @@ function openAssignmentPopup(employeeId) {
     document.getElementById('assignFit').value = 1;
     document.getElementById('fitValue').textContent = '1.0';
     
-    // Привязываем события
+    
     projectSelect.onchange = updateAssignmentPopup;
     capacitySlider.oninput = function(e) {
         document.getElementById('capacityValue').textContent = parseFloat(e.target.value).toFixed(1);
@@ -1616,7 +1564,7 @@ function openAssignmentPopup(employeeId) {
         updateAssignmentPopup();
     };
     
-    // Показываем попап
+    
     document.getElementById('assignPopup').style.display = 'block';
     updateAssignmentPopup();
 }
@@ -1635,18 +1583,18 @@ function updateAssignmentPopup() {
     
     document.getElementById('effectiveCapacity').textContent = effectiveCapacity.toFixed(3);
     
-    // Расчёт capacity сотрудника после назначения
+    
     const currentCapacity = getTotalEmployeeCapacity(currentAssignEmployee.id, monthKey);
     const totalAfter = currentCapacity + capacity;
     document.getElementById('totalAfterAssign').textContent = totalAfter.toFixed(2);
     
-    // Расчёт capacity проекта после назначения
+    
     const usedBefore = getProjectUsedCapacity(project.id, monthKey);
     const projectAfter = usedBefore + capacity;
     document.getElementById('projectCapacityAfter').textContent = projectAfter.toFixed(2);
     document.getElementById('projectCapacityRequired').textContent = project.employeeCapacity;
     
-    // Валидация
+    
     const messageEl = document.getElementById('assignValidationMessage');
     const submitBtn = document.getElementById('assignSubmitBtn');
     
@@ -1664,7 +1612,7 @@ function updateAssignmentPopup() {
         submitBtn.disabled = false;
     }
     
-    // Информация о проекте
+    
     document.getElementById('projectCapacityInfo').innerHTML = `Currently used: ${usedBefore.toFixed(2)} / ${project.employeeCapacity} FTE`;
 }
 
@@ -1673,7 +1621,6 @@ function getProjectUsedCapacity(projectId, monthKey) {
     return projectAssignments.reduce((sum, a) => sum + a.capacity, 0);
 }
 
-// Закрытие попапа
 document.getElementById('assignCancelBtn').onclick = () => {
     document.getElementById('assignPopup').style.display = 'none';
 };
@@ -1681,7 +1628,6 @@ document.querySelector('.assign-popup__close').onclick = () => {
     document.getElementById('assignPopup').style.display = 'none';
 };
 
-// Сохранение назначения
 document.getElementById('assignSubmitBtn').onclick = () => {
     const projectId = document.getElementById('assignProjectSelect').value;
     const capacity = parseFloat(document.getElementById('assignCapacity').value);
@@ -1695,29 +1641,28 @@ document.getElementById('assignSubmitBtn').onclick = () => {
     const monthKey = getCurrentMonthKey();
     const employeeId = currentAssignEmployee.id;
     
-    // Проверка лимита сотрудника
     const currentCap = getTotalEmployeeCapacity(employeeId, monthKey);
     if (currentCap + capacity > 1.5) {
         alert('Cannot exceed employee capacity limit (1.5)');
         return;
     }
     
-    // Добавляем назначение
+    
     assignments.push({
         projectId: parseInt(projectId),
         employeeId: employeeId,
         capacity: capacity
     });
     
-    // Сохраняем fit-коэффициент для этого проекта и должности
+    
     if (!fitCoefficients[projectId]) fitCoefficients[projectId] = {};
     fitCoefficients[projectId][currentAssignEmployee.position] = fit;
     
-    // Обновляем таблицы
+    
     renderProjectsTable();
     renderEmployeesTable();
     
-    // Закрываем попап
+    
     document.getElementById('assignPopup').style.display = 'none';
     alert('Employee assigned successfully');
 };

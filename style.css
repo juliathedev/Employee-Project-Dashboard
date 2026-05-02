@@ -469,6 +469,9 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     padding-bottom: 12px;
     margin-bottom: 16px;
 }
+.modal-header__head {
+    background-color: hsla(251, 78%, 54%, 0.08);
+}
 
 .modal-close {
     background: none;
