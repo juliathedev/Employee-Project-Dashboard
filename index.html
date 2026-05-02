@@ -280,7 +280,50 @@
                 </div>
             </form>
         </div>
-</div>
+    </div>
+    <!-- Popup employee assignment -->
+    <div id="assignPopup" class="assign-popup hidden">
+        <div class="assign-popup__content">
+            <div class="assign-popup__header">
+                <h3>Assign Employee to Project</h3>
+                <button class="assign-popup__close">&times;</button>
+            </div>
+            <div class="assign-popup__body">
+                <div class="assign-popup__info">
+                    <p><strong>Employee:</strong> <span id="assignEmployeeName"></span></p>
+                    <p><strong>Current capacity:</strong> <span id="assignCurrentCapacity"></span> / 1.5</p>
+                    <p><strong>Available capacity:</strong> <span id="assignAvailableCapacity"></span></p>
+                </div>
+                
+                <div class="assign-popup__field">
+                    <label>Project</label>
+                    <select id="assignProjectSelect"></select>
+                    <div class="project-capacity-info" id="projectCapacityInfo"></div>
+                </div>
+                
+                <div class="assign-popup__field">
+                    <label>Capacity: <span id="capacityValue">0.0</span></label>
+                    <input type="range" id="assignCapacity" min="0" max="1.5" step="0.1" value="0">
+                </div>
+                
+                <div class="assign-popup__field">
+                    <label>Project Fit: <span id="fitValue">1.0</span></label>
+                    <input type="range" id="assignFit" min="0" max="1" step="0.1" value="1">
+                </div>
+                
+                <div class="assign-results">
+                    <p><strong>Effective capacity:</strong> <span id="effectiveCapacity">0.00</span></p>
+                    <p><strong>Total employee capacity after:</strong> <span id="totalAfterAssign"></span> / 1.5</p>
+                    <p><strong>Project capacity after:</strong> <span id="projectCapacityAfter"></span> / <span id="projectCapacityRequired"></span></p>
+                </div>
+                <div id="assignValidationMessage" class="validation-message"></div>
+            </div>
+            <div class="assign-popup__footer">
+                <button class="btn-cancel" id="assignCancelBtn">Cancel</button>
+                <button class="btn-submit" id="assignSubmitBtn">Assign</button>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>

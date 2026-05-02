@@ -557,11 +557,11 @@ function showEmployeesModal(projectId, projectName) {
                     <td class="cost-cell">$${details.cost.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
                     <td class="${profitClass}">${details.profit >= 0 ? '$' : '-$'}${Math.abs(details.profit).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
                     <td class="actions-cell">
-                        <button class="edit-assignment-btn" data-employee-id="${employee.id}" data-project-id="${projectId}">
+                        <button class="edit-assignment-btn  btn__action" data-employee-id="${employee.id}" data-project-id="${projectId}">
                             <i class="fa-solid fa-pen"></i>
                             Edit
                         </button>
-                        <button class="unassign-btn" data-employee-id="${employee.id}" data-project-id="${projectId}">
+                        <button class="unassign-btn btn__action" data-employee-id="${employee.id}" data-project-id="${projectId}">
                             <i class="fa-solid fa-user-minus"></i>
                             Unassign
                         </button>
@@ -744,15 +744,26 @@ function renderEmployeesTable() {
                 <td class="editable-firstname" data-id="${emp.id}" data-field="firstName">${escapeHtml(emp.firstName)}</td>
                 <td class="editable-lastname" data-id="${emp.id}" data-field="lastName">${escapeHtml(emp.lastName)}</td>
                 <td>${age}</td>
-                <td class="editable-position" data-id="${emp.id}" data-field="position">${escapeHtml(emp.position)}</td>
+                <td class="editable-position" data-id="${emp.id}">
+                    ${escapeHtml(emp.position)} <i class="fa-solid fa-pen" style="opacity:0; transition:opacity 0.2s; margin-left: 8px;"></i>
+                </td>
                 <td class="editable-salary" data-id="${emp.id}" data-field="salary">${formatCurrency(emp.salary)}</td>
                 <td>${formatCurrency(estimatedPayment)}</td>
                 <td>${showAssignmentsBtn}</td>
                 <td class="${incomeClass}">${formatCurrency(projectedIncome)}</td>
-                <td class="actions-cell">
-                    <button class="availability-btn" data-id="${emp.id}" title="Vacation Calendar"><i class="fa-solid fa-calendar-alt"></i></button>
-                    <button class="assign-btn" data-id="${emp.id}" ${isOverloaded ? 'disabled' : ''} title="Assign to project"><i class="fa-solid fa-user-plus"></i></button>
-                    <button class="delete-employee-btn" data-id="${emp.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                <td class="actions-cell cell-row">
+                    <button class="availability-btn btn__action" data-id="${emp.id}">
+                        <i class="fa-solid fa-calendar-alt"></i>
+                        Availability
+                    </button>
+                    <button class="assign-btn btn__action" data-id="${emp.id}" ${isOverloaded ? 'disabled' : ''}>
+                        <i class="fa-solid fa-user-plus"></i>
+                        Assign
+                    </button>
+                    <button class="delete-employee-btn btn__action" data-id="${emp.id}">
+                        <i class="fa-solid fa-trash"></i>
+                        Delete
+                    </button>
                 </td>
             </tr>
         `;
