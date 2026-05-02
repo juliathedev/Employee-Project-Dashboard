@@ -108,22 +108,23 @@ const assignments = [
     { projectId: 4, employeeId: 104, capacity: 0.6 },
     { projectId: 4, employeeId: 101, capacity: 0.7 }
 ];
-const vacations = {
-    '2026-01': {
-        101: 2,
-        102: 0,
-        103: 5,
-        104: 1,
-        105: 3
-    },
-    '2026-02': {
-        101: 0,
-        102: 3,
-        103: 0,
-        104: 0,
-        105: 2
-    }
-};
+let vacations = {};
+// const vacations = {
+//     '2026-01': {
+//         101: 2,
+//         102: 0,
+//         103: 5,
+//         104: 1,
+//         105: 3
+//     },
+//     '2026-02': {
+//         101: 0,
+//         102: 3,
+//         103: 0,
+//         104: 0,
+//         105: 2
+//     }
+// };
 
 
 
@@ -1033,7 +1034,7 @@ function attachEmployeeActionButtons() {
     document.querySelectorAll('.availability-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const empId = btn.dataset.id;
-            openVacationCalendar(empId);
+            showAvailabilityCalendar(empId);
         });
     });
 
@@ -1666,3 +1667,307 @@ document.getElementById('assignSubmitBtn').onclick = () => {
     document.getElementById('assignPopup').style.display = 'none';
     alert('Employee assigned successfully');
 };
+
+// ======= AVAILABILITY CALENDAR =======
+// Глобальные переменные для календаря
+let currentCalendarDate = new Date();
+let selectedVacationDays = new Set(); // Хранит строки "YYYY-MM-DD"
+let currentCalendarEmployeeId = null;
+
+function showAvailabilityCalendar(employeeId) {
+    const modal = document.getElementById('availabilityModal');
+
+    currentCalendarEmployeeId = employeeId;
+    const employee = employeesData.find(e => e.id === employeeId);
+    if (!employee) return;
+    
+    currentMonthKey = getCurrentMonthKey();
+    
+    // Загружаем сохраненные отпуска
+    const savedVacations = vacations[currentMonthKey]?.[employeeId] || [];
+    selectedVacationDays.clear();
+    savedVacations.forEach(dateStr => {
+        selectedVacationDays.add(dateStr);
+    });
+    
+    document.getElementById('calendarEmployeeName').textContent = employee.name;
+    
+    renderCalendar();
+    updateVacationRanges();
+    updateWorkingDaysInfo();
+    
+    modal.style.display = 'flex';
+    initModalHandlers();
+}
+
+function renderCalendar() {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    document.getElementById('calendarMonthYear').textContent = `${monthNames[month]} ${year}`;
+    
+    const firstDay = new Date(year, month, 1);
+    const startWeekday = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    
+    let gridHtml = '';
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    weekdays.forEach(day => {
+        gridHtml += `<div class="calendar-weekday">${day}</div>`;
+    });
+    
+    const today = new Date();
+    const todayDate = today.getDate();
+    const isCurrentMonthForToday = today.getMonth() === month && today.getFullYear() === year;
+    
+    for (let i = 0; i < 42; i++) {
+        let dayNum;
+        let isThisMonth = true;
+        
+        if (i < startWeekday) {
+            // Предыдущий месяц
+            dayNum = prevMonthDays - (startWeekday - i) + 1;
+            isThisMonth = false;
+        } else if (i >= startWeekday + daysInMonth) {
+            // Следующий месяц
+            dayNum = i - (startWeekday + daysInMonth) + 1;
+            isThisMonth = false;
+        } else {
+            // Текущий месяц
+            dayNum = i - startWeekday + 1;
+        }
+        
+        // Формируем строку даты напрямую (без вызова функции)
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dayStr = String(dayNum).padStart(2, '0');
+        const dateStr = `${year}-${monthStr}-${dayStr}`;
+        
+        // Создаём объект Date для проверки дня недели
+        let tempDate = new Date(year, month, dayNum);
+        if (!isThisMonth) {
+            if (i < startWeekday) {
+                tempDate = new Date(year, month - 1, dayNum);
+            } else {
+                tempDate = new Date(year, month + 1, dayNum);
+            }
+        }
+        
+        const isWeekend = (tempDate.getDay() === 0 || tempDate.getDay() === 6);
+        const isTodayHighlight = (isThisMonth && dayNum === todayDate && isCurrentMonthForToday);
+        const isVacation = selectedVacationDays.has(dateStr);
+        
+        let classes = [];
+        if (!isThisMonth) classes.push('other-month');
+        if (isWeekend) classes.push('weekend');
+        if (isTodayHighlight) classes.push('today');
+        if (isVacation) classes.push('vacation');
+        
+        const onClick = isThisMonth ? `onclick="toggleVacationDay('${dateStr}')"` : '';
+        
+        gridHtml += `<div class="calendar-day ${classes.join(' ')}" ${onClick}>${dayNum}</div>`;
+    }
+    
+    document.getElementById('calendarGrid').innerHTML = gridHtml;
+}
+
+function toggleVacationDay(dateStr) {
+    console.log('toggleVacationDay called with:', dateStr);
+    if (selectedVacationDays.has(dateStr)) {
+        selectedVacationDays.delete(dateStr);
+    } else {
+        selectedVacationDays.add(dateStr);
+    }
+    
+    renderCalendar();
+    updateVacationRanges();
+    updateWorkingDaysInfo();
+}
+
+function updateVacationRanges() {
+    if (selectedVacationDays.size === 0) {
+        document.getElementById('vacationRanges').textContent = '-';
+        return;
+    }
+    
+    // Сортируем даты
+    const sortedDates = Array.from(selectedVacationDays).sort();
+    
+    // Группируем в диапазоны
+    const ranges = [];
+    let start = sortedDates[0];
+    let prev = sortedDates[0];
+    
+    for (let i = 1; i <= sortedDates.length; i++) {
+        const current = sortedDates[i];
+        if (current) {
+            const prevDate = new Date(prev);
+            const currentDate = new Date(current);
+            const diffDays = (currentDate - prevDate) / (1000 * 60 * 60 * 24);
+            
+            if (diffDays > 1) {
+                // Конец диапазона
+                ranges.push({ start, end: prev });
+                start = current;
+            }
+        } else {
+            // Последний диапазон
+            ranges.push({ start, end: prev });
+        }
+        prev = current;
+    }
+    
+    // Форматируем диапазоны
+    const formattedRanges = ranges.map(range => {
+        const startDate = new Date(range.start);
+        const endDate = new Date(range.end);
+        const startStr = `${String(startDate.getDate()).padStart(2, '0')}.${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (startDate.toDateString() === endDate.toDateString()) {
+            return startStr;
+        } else {
+            const endStr = `${String(endDate.getDate()).padStart(2, '0')}.${String(endDate.getMonth() + 1).padStart(2, '0')}`;
+            return `${startStr}-${endStr}`;
+        }
+    });
+    
+    document.getElementById('vacationRanges').textContent = formattedRanges.join(', ');
+}
+
+function updateWorkingDaysInfo() {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    
+    // Получаем все рабочие дни месяца (пн-пт)
+    const workingDaysList = [];
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Не воскресенье и не суббота
+            workingDaysList.push(day);
+        }
+    }
+    
+    const totalWorkingDays = workingDaysList.length;
+    
+    // Подсчитываем отпускные дни, которые приходятся на рабочие дни
+    let vacationWorkingDays = 0;
+    selectedVacationDays.forEach(dateStr => {
+        const date = new Date(dateStr);
+        if (date.getMonth() === month && date.getFullYear() === year) {
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                vacationWorkingDays++;
+            }
+        }
+    });
+    
+    const actualWorkingDays = totalWorkingDays - vacationWorkingDays;
+    document.getElementById('workingDaysCount').textContent = actualWorkingDays;
+    document.getElementById('totalWorkingDays').textContent = totalWorkingDays;
+}
+
+// function formatDateToYYYYMMDD(date) {
+//     const year = date.getFullYear();
+//     const month = String(date.getMonth() + 1).padStart(2, '0');
+//     const day = String(date.getDate()).padStart(2, '0');
+//     return `${year}-${month}-${day}`;
+// }
+
+function setVacationDays() {
+    if (!currentCalendarEmployeeId) return;
+    
+    const monthKey = getCurrentMonthKey();
+    
+    // Инициализируем структуру если нужно
+    if (!vacations[monthKey]) {
+        vacations[monthKey] = {};
+    }
+    
+    // Сохраняем выбранные отпуска
+    vacations[monthKey][currentCalendarEmployeeId] = Array.from(selectedVacationDays);
+    
+    // Пересохраняем в localStorage
+    saveDataToLocalStorage();
+    
+    // Закрываем модалку
+    closeAvailabilityModal();
+    
+    // Обновляем все таблицы с пересчетом метрик
+    refreshAllTables();
+}
+
+function closeAvailabilityModal() {
+    document.getElementById('availabilityModal').style.display = 'none';
+}
+
+function refreshAllTables() {
+    // Обновляем все таблицы на странице
+    if (typeof showProjectsOverview === 'function') {
+        showProjectsOverview();
+    }
+    if (typeof showEmployeesList === 'function') {
+        showEmployeesList();
+    }
+    // Добавьте другие функции обновления таблиц
+}
+
+// Навигация по месяцам
+function prevMonth() {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    renderCalendar();
+    updateVacationRanges();
+    updateWorkingDaysInfo();
+}
+
+function nextMonth() {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    renderCalendar();
+    updateVacationRanges();
+    updateWorkingDaysInfo();
+}
+
+// В событии слушателе
+document.body.addEventListener('click', function(e) {
+    const btn = e.target.closest('.availability-btn');
+    if (btn && btn.dataset.id) {  // ← было employeeId, стало id
+        console.log('✅ Клик по Availability, ID:', btn.dataset.id);
+        e.preventDefault();
+        showAvailabilityCalendar(parseInt(btn.dataset.id));  // ← тоже id
+    }
+});
+
+function closeAvailabilityModal() {
+    const modal = document.getElementById('availabilityModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function initModalHandlers() {
+    const modal = document.getElementById('availabilityModal');
+    if (!modal) return;
+    
+    // Закрытие по кнопкам
+    const closeBtn = modal.querySelector('.modal-close');
+    const cancelBtn = modal.querySelector('.modal-close-btn');
+    
+    if (closeBtn) closeBtn.onclick = closeAvailabilityModal;
+    if (cancelBtn) cancelBtn.onclick = closeAvailabilityModal;
+    
+    // Закрытие по клику на фон
+    modal.onclick = (e) => {
+        if (e.target === modal) closeAvailabilityModal();
+    };
+    
+    // Закрытие по Escape
+    document.onkeydown = (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'flex') {
+            closeAvailabilityModal();
+        }
+    };
+}
