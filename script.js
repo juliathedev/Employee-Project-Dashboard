@@ -702,6 +702,8 @@ function findProjectById(projectId, monthKey) {
     return monthData.projects.find(p => p.id === projectId);
 }
 
+// Render Employees Table
+
 function renderEmployeesTable() {
     const monthKey = getCurrentMonthKey();
     const tbody = document.querySelector('.employees__table tbody');
@@ -756,7 +758,7 @@ function renderEmployeesTable() {
                         <i class="fa-solid fa-calendar-alt"></i>
                         Availability
                     </button>
-                    <button class="assign-btn btn__action" data-id="${emp.id}" ${isOverloaded ? 'disabled' : ''}>
+                    <button class="assign-btn btn__action" data-id="${emp.id}">
                         <i class="fa-solid fa-user-plus"></i>
                         Assign
                     </button>
@@ -1010,6 +1012,23 @@ function attachInlineEditing() {
     });
 }
 function attachEmployeeActionButtons() {
+    // Принудительно привязываем кнопки Assign
+    const assignBtns = document.querySelectorAll('.assign-btn:not([disabled])');
+    console.log('🟢 Found assign buttons:', assignBtns.length);
+    
+    assignBtns.forEach(btn => {
+        // Убираем старые обработчики
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const empId = newBtn.dataset.id;
+            console.log('➕ Assign clicked, empId:', empId);
+            openAssignmentPopup(parseInt(empId));
+        });
+    });
     // Availability
     document.querySelectorAll('.availability-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1475,3 +1494,230 @@ empForm.addEventListener('submit', (e) => {
         alert(`Employee ${newEmployee.firstName} ${newEmployee.lastName} added!`);
     }
 });
+
+// Assign Employee to Project
+
+// function attachEmployeeActionButtons() {
+//     // === SHOW ASSIGNMENTS (кнопка в колонке Project) ===
+//     document.querySelectorAll('.show-assignments-btn').forEach(btn => {
+//         // Убираем старый обработчик, чтобы не дублировать
+//         btn.removeEventListener('click', handleShowAssignments);
+//         btn.addEventListener('click', handleShowAssignments);
+//     });
+
+//     // === ASSIGN (кнопка в колонке Actions) ===
+//     document.querySelectorAll('.assign-btn').forEach(btn => {
+//         btn.removeEventListener('click', handleAssign);
+//         btn.addEventListener('click', handleAssign);
+//     });
+
+//     // === AVAILABILITY ===
+//     document.querySelectorAll('.availability-btn').forEach(btn => {
+//         btn.removeEventListener('click', handleAvailability);
+//         btn.addEventListener('click', handleAvailability);
+//     });
+
+//     // === DELETE EMPLOYEE ===
+//     document.querySelectorAll('.delete-employee-btn').forEach(btn => {
+//         btn.removeEventListener('click', handleDeleteEmployee);
+//         btn.addEventListener('click', handleDeleteEmployee);
+//     });
+// }
+
+// // Отдельные обработчики
+// function handleShowAssignments(e) {
+//     e.stopPropagation();
+//     e.preventDefault();
+//     const btn = e.currentTarget;
+//     const empId = btn.dataset.employeeId;
+//     console.log('📋 Show assignments for employee:', empId);
+//     showEmployeeAssignmentsModal(parseInt(empId));
+// }
+
+// function handleAssign(e) {
+//     e.stopPropagation();
+//     e.preventDefault();
+//     const btn = e.currentTarget;
+//     const empId = btn.dataset.id;
+//     console.log('➕ Assign button clicked for employee:', empId);
+//     openAssignmentPopup(parseInt(empId));
+// }
+
+// function handleAvailability(e) {
+//     e.stopPropagation();
+//     e.preventDefault();
+//     const btn = e.currentTarget;
+//     const empId = btn.dataset.id;
+//     console.log('📅 Availability for employee:', empId);
+//     openVacationCalendar(empId);
+// }
+
+// function handleDeleteEmployee(e) {
+//     e.stopPropagation();
+//     e.preventDefault();
+//     const btn = e.currentTarget;
+//     const empId = parseInt(btn.dataset.id);
+//     if (confirm('Delete employee permanently? All assignments will be lost.')) {
+//         const index = employeesData.findIndex(emp => emp.id === empId);
+//         if (index !== -1) employeesData.splice(index, 1);
+//         // Удаляем назначения
+//         for (let i = assignments.length - 1; i >= 0; i--) {
+//             if (assignments[i].employeeId === empId) assignments.splice(i, 1);
+//         }
+//         renderEmployeesTable();
+//         renderProjectsTable();
+//     }
+// }
+// Переменные для текущего назначения
+let currentAssignEmployee = null;
+
+// Открыть попап назначения
+function openAssignmentPopup(employeeId) {
+    const employee = employeesData.find(e => e.id == employeeId);
+    if (!employee) return;
+    currentAssignEmployee = employee;
+    
+    const monthKey = getCurrentMonthKey();
+    const currentCapacity = getTotalEmployeeCapacity(employee.id, monthKey);
+    const availableCapacity = Math.max(0, 1.5 - currentCapacity);
+    
+    // Заполняем информацию о сотруднике
+    document.getElementById('assignEmployeeName').textContent = `${employee.firstName} ${employee.lastName}`;
+    document.getElementById('assignCurrentCapacity').textContent = currentCapacity.toFixed(2);
+    document.getElementById('assignAvailableCapacity').textContent = availableCapacity.toFixed(2);
+    
+    // Заполняем список проектов
+    const projectSelect = document.getElementById('assignProjectSelect');
+    const projects = projectsDataByMonth[monthKey]?.projects || [];
+    projectSelect.innerHTML = '<option value="">Select project...</option>';
+    projects.forEach(project => {
+        const option = document.createElement('option');
+        option.value = project.id;
+        option.textContent = project.projectName;
+        projectSelect.appendChild(option);
+    });
+    
+    // Сброс слайдеров
+    const capacitySlider = document.getElementById('assignCapacity');
+    capacitySlider.value = 0;
+    capacitySlider.max = Math.min(1.5, availableCapacity + currentCapacity);
+    document.getElementById('capacityValue').textContent = '0.0';
+    document.getElementById('assignFit').value = 1;
+    document.getElementById('fitValue').textContent = '1.0';
+    
+    // Привязываем события
+    projectSelect.onchange = updateAssignmentPopup;
+    capacitySlider.oninput = function(e) {
+        document.getElementById('capacityValue').textContent = parseFloat(e.target.value).toFixed(1);
+        updateAssignmentPopup();
+    };
+    document.getElementById('assignFit').oninput = function(e) {
+        document.getElementById('fitValue').textContent = parseFloat(e.target.value).toFixed(1);
+        updateAssignmentPopup();
+    };
+    
+    // Показываем попап
+    document.getElementById('assignPopup').style.display = 'block';
+    updateAssignmentPopup();
+}
+
+function updateAssignmentPopup() {
+    const projectId = document.getElementById('assignProjectSelect').value;
+    if (!projectId) return;
+    
+    const monthKey = getCurrentMonthKey();
+    const project = projectsDataByMonth[monthKey].projects.find(p => p.id == projectId);
+    if (!project) return;
+    
+    const capacity = parseFloat(document.getElementById('assignCapacity').value);
+    const fit = parseFloat(document.getElementById('assignFit').value);
+    const effectiveCapacity = capacity * fit;
+    
+    document.getElementById('effectiveCapacity').textContent = effectiveCapacity.toFixed(3);
+    
+    // Расчёт capacity сотрудника после назначения
+    const currentCapacity = getTotalEmployeeCapacity(currentAssignEmployee.id, monthKey);
+    const totalAfter = currentCapacity + capacity;
+    document.getElementById('totalAfterAssign').textContent = totalAfter.toFixed(2);
+    
+    // Расчёт capacity проекта после назначения
+    const usedBefore = getProjectUsedCapacity(project.id, monthKey);
+    const projectAfter = usedBefore + capacity;
+    document.getElementById('projectCapacityAfter').textContent = projectAfter.toFixed(2);
+    document.getElementById('projectCapacityRequired').textContent = project.employeeCapacity;
+    
+    // Валидация
+    const messageEl = document.getElementById('assignValidationMessage');
+    const submitBtn = document.getElementById('assignSubmitBtn');
+    
+    if (totalAfter > 1.5) {
+        messageEl.className = 'validation-message error';
+        messageEl.textContent = '⚠️ Employee capacity limit (1.5) will be exceeded!';
+        submitBtn.disabled = true;
+    } else if (projectAfter > project.employeeCapacity) {
+        messageEl.className = 'validation-message warning';
+        messageEl.textContent = `⚠️ Project capacity will be exceeded by ${(projectAfter - project.employeeCapacity).toFixed(2)} FTE`;
+        submitBtn.disabled = false;
+    } else {
+        messageEl.className = 'validation-message success';
+        messageEl.textContent = '✓ Valid assignment';
+        submitBtn.disabled = false;
+    }
+    
+    // Информация о проекте
+    document.getElementById('projectCapacityInfo').innerHTML = `Currently used: ${usedBefore.toFixed(2)} / ${project.employeeCapacity} FTE`;
+}
+
+function getProjectUsedCapacity(projectId, monthKey) {
+    const projectAssignments = assignments.filter(a => a.projectId == projectId);
+    return projectAssignments.reduce((sum, a) => sum + a.capacity, 0);
+}
+
+// Закрытие попапа
+document.getElementById('assignCancelBtn').onclick = () => {
+    document.getElementById('assignPopup').style.display = 'none';
+};
+document.querySelector('.assign-popup__close').onclick = () => {
+    document.getElementById('assignPopup').style.display = 'none';
+};
+
+// Сохранение назначения
+document.getElementById('assignSubmitBtn').onclick = () => {
+    const projectId = document.getElementById('assignProjectSelect').value;
+    const capacity = parseFloat(document.getElementById('assignCapacity').value);
+    const fit = parseFloat(document.getElementById('assignFit').value);
+    
+    if (!projectId || capacity <= 0) {
+        alert('Please select project and capacity');
+        return;
+    }
+    
+    const monthKey = getCurrentMonthKey();
+    const employeeId = currentAssignEmployee.id;
+    
+    // Проверка лимита сотрудника
+    const currentCap = getTotalEmployeeCapacity(employeeId, monthKey);
+    if (currentCap + capacity > 1.5) {
+        alert('Cannot exceed employee capacity limit (1.5)');
+        return;
+    }
+    
+    // Добавляем назначение
+    assignments.push({
+        projectId: parseInt(projectId),
+        employeeId: employeeId,
+        capacity: capacity
+    });
+    
+    // Сохраняем fit-коэффициент для этого проекта и должности
+    if (!fitCoefficients[projectId]) fitCoefficients[projectId] = {};
+    fitCoefficients[projectId][currentAssignEmployee.position] = fit;
+    
+    // Обновляем таблицы
+    renderProjectsTable();
+    renderEmployeesTable();
+    
+    // Закрываем попап
+    document.getElementById('assignPopup').style.display = 'none';
+    alert('Employee assigned successfully');
+};
