@@ -109,22 +109,36 @@ const assignments = [
     { projectId: 4, employeeId: 101, capacity: 0.7 }
 ];
 let vacations = {};
-// const vacations = {
-//     '2026-01': {
-//         101: 2,
-//         102: 0,
-//         103: 5,
-//         104: 1,
-//         105: 3
-//     },
-//     '2026-02': {
-//         101: 0,
-//         102: 3,
-//         103: 0,
-//         104: 0,
-//         105: 2
-//     }
-// };
+
+// Функции работы с localStorage
+function loadDataFromLocalStorage() {
+    const savedEmployees = localStorage.getItem('employees');
+    const savedAssignments = localStorage.getItem('assignments');
+    const savedVacations = localStorage.getItem('vacations');
+    const savedProjects = localStorage.getItem('projects');
+    const savedFit = localStorage.getItem('fitCoefficients');
+    
+    if (savedEmployees) employeesData = JSON.parse(savedEmployees);
+    if (savedAssignments) {
+        const loaded = JSON.parse(savedAssignments);
+        // Добавляем ID если их нет
+        loaded.forEach((item, idx) => {
+            if (!item.id) item.id = idx + 1;
+        });
+        assignments = loaded;
+    }
+    if (savedVacations) vacations = JSON.parse(savedVacations);
+    if (savedProjects) projectsDataByMonth = JSON.parse(savedProjects);
+    if (savedFit) fitCoefficients = JSON.parse(savedFit);
+}
+
+function saveDataToLocalStorage() {
+    localStorage.setItem('employees', JSON.stringify(employeesData));
+    localStorage.setItem('assignments', JSON.stringify(assignments));
+    localStorage.setItem('vacations', JSON.stringify(vacations));
+    localStorage.setItem('projects', JSON.stringify(projectsDataByMonth));
+    localStorage.setItem('fitCoefficients', JSON.stringify(fitCoefficients));
+}
 
 
 
@@ -526,10 +540,13 @@ function calculateEmployeeDetails(employee, assignment, projectId, monthKey) {
 function showEmployeesModal(projectId, projectName) {
     
     const monthKey = getCurrentMonthKey();
-    
-    
     const projectAssignments = assignments.filter(a => a.projectId == projectId);
     
+    projectAssignments.forEach((assign, idx) => {
+        if (!assign.id) {
+            assign.id = idx + 1;
+        }
+    });
     
     projectAssignments.sort((a, b) => {
         const empA = employeesData.find(e => e.id === a.employeeId);
@@ -558,7 +575,7 @@ function showEmployeesModal(projectId, projectName) {
                     <td class="cost-cell">$${details.cost.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
                     <td class="${profitClass}">${details.profit >= 0 ? '$' : '-$'}${Math.abs(details.profit).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
                     <td class="actions-cell">
-                        <button class="edit-assignment-btn  btn__action" data-employee-id="${employee.id}" data-project-id="${projectId}">
+                        <button class="edit-assignment-btn  btn__action" data-employee-id="${employee.id}" data-project-id="${projectId}" data-assignment-id="${assignment.id}">
                             <i class="fa-solid fa-pen"></i>
                             Edit
                         </button>
@@ -636,12 +653,18 @@ function showEmployeesModal(projectId, projectName) {
     
     
     modal.querySelectorAll('.edit-assignment-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const empId = btn.dataset.employeeId;
-            const projId = btn.dataset.projectId;
-            alert(`Edit assignment for employee ${empId} on project ${projId} – будет реализовано`);
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const empId = parseInt(btn.dataset.employeeId);
+            const projId = parseInt(btn.dataset.projectId);
+            const assignId = parseInt(btn.dataset.assignmentId);
+            
+            console.log('Data:', { assignId, empId, projId });
         });
     });
+
+
     modal.querySelectorAll('.unassign-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const empId = btn.dataset.employeeId;
@@ -1103,6 +1126,9 @@ function attachEmployeeActionButtons() {
 }
 
 function showEmployeeAssignmentsModal(employeeId) {
+    assignments.forEach((assign, idx) => {
+        if (!assign.id) assign.id = idx + 1;
+    });
     const employee = employeesData.find(e => e.id === employeeId);
     if (!employee) return;
     const monthKey = getCurrentMonthKey();
@@ -1135,7 +1161,7 @@ function showEmployeeAssignmentsModal(employeeId) {
                     <td>${cost}</td>
                     <td class="${profitClass}">${formatCurrency(profit)}</td>
                     <td class="actions-cell">
-                        <button class="edit-assignment-btn  btn__action" data-employee-id="${employee.id}" data-project-id="${assign.projectId}">
+                        <button class="edit-assignment-btn  btn__action" data-employee-id="${employee.id}" data-project-id="${assign.projectId}" data-assignment-id="${assign.id}">
                             <i class="fa-solid fa-pen"></i>
                             Edit
                         </button>
@@ -1986,3 +2012,313 @@ function initModalHandlers() {
         }
     };
 }
+// ====== Edit Assignment ======
+// Глобальные переменные для редактирования
+let currentEditAssignment = null;
+let currentEditEmployee = null;
+let currentEditProject = null;
+
+function openEditAssignment(assignmentId, employeeId, projectId) {
+    const monthKey = getCurrentMonthKey();
+    
+    // Находим данные
+    currentEditAssignment = assignments.find(a => a.id === assignmentId);
+    if (!currentEditAssignment) return;
+    
+    currentEditEmployee = employeesData.find(e => e.id === employeeId);
+    currentEditProject = findProjectById(projectId, monthKey);
+    
+    if (!currentEditEmployee || !currentEditProject) return;
+    
+    // Заполняем информацию
+    document.getElementById('editEmployeeName').textContent = 
+        `${currentEditEmployee.firstName} ${currentEditEmployee.lastName}`;
+    document.getElementById('editProjectName').textContent = currentEditProject.projectName;
+    
+    // Настраиваем слайдеры
+    const capacitySlider = document.getElementById('capacitySlider');
+    const fitSlider = document.getElementById('fitSlider');
+    const capacityValue = document.getElementById('capacityValue');
+    const fitValue = document.getElementById('fitValue');
+    
+    // Получаем текущий fit коэффициент
+    const currentFit = fitCoefficients[projectId]?.[currentEditEmployee.position] || 1.0;
+    
+    capacitySlider.value = currentEditAssignment.capacity;
+    fitSlider.value = currentFit;
+    capacityValue.textContent = currentEditAssignment.capacity;
+    fitValue.textContent = currentFit;
+    
+    // Добавляем обработчики
+    capacitySlider.oninput = () => {
+        capacityValue.textContent = capacitySlider.value;
+        validateAndPreview();
+    };
+    
+    fitSlider.oninput = () => {
+        fitValue.textContent = parseFloat(fitSlider.value).toFixed(2);
+        validateAndPreview();
+    };
+    
+    // Показываем модалку
+    document.getElementById('editAssignmentModal').style.display = 'flex';
+    validateAndPreview();
+}
+
+function validateAndPreview() {
+    const capacity = parseFloat(document.getElementById('capacitySlider').value);
+    const fit = parseFloat(document.getElementById('fitSlider').value);
+    
+    let isValid = true;
+    
+    // Валидация capacity
+    const capacityValidation = document.getElementById('capacityValidation');
+    const employeeTotalAssigned = getEmployeeTotalAssigned(currentEditEmployee.id, currentEditAssignment.projectId);
+    const availableCapacity = currentEditEmployee.salary / 100; // Пример: 100 hours = 10000 salary
+    
+    if (capacity < 0 || capacity > 176) {
+        capacityValidation.textContent = '❌ Capacity must be between 0 and 176 hours';
+        capacityValidation.className = 'validation-message error';
+        isValid = false;
+    } else if (employeeTotalAssigned + capacity > 176) {
+        capacityValidation.textContent = `⚠️ Employee would exceed capacity (${employeeTotalAssigned + capacity}/176)`;
+        capacityValidation.className = 'validation-message error';
+        isValid = false;
+    } else {
+        capacityValidation.textContent = '✅ Valid capacity';
+        capacityValidation.className = 'validation-message success';
+    }
+    
+    // Валидация fit
+    const fitValidation = document.getElementById('fitValidation');
+    if (fit < 0 || fit > 1) {
+        fitValidation.textContent = '❌ Fit must be between 0 and 1.0';
+        fitValidation.className = 'validation-message error';
+        isValid = false;
+    } else {
+        fitValidation.textContent = '✅ Valid fit coefficient';
+        fitValidation.className = 'validation-message success';
+    }
+    
+    // Обновляем preview
+    updateFinancialPreview(capacity, fit);
+    
+    // Включаем/выключаем кнопку сохранения
+    document.getElementById('saveAssignmentBtn').disabled = !isValid;
+}
+
+function updateFinancialPreview(capacity, fit) {
+    const vacationDays = vacations[getCurrentMonthKey()]?.[currentEditEmployee.id] || 0;
+    const workingDays = 22;
+    const vacationFactor = 1 - (vacationDays / workingDays);
+    const effectiveCapacity = capacity * fit * vacationFactor;
+    const revenue = effectiveCapacity * currentEditEmployee.salary * 1.2;
+    const cost = capacity * currentEditEmployee.salary;
+    const profit = revenue - cost;
+    
+    document.getElementById('previewRevenue').textContent = `$${revenue.toFixed(2)}`;
+    document.getElementById('previewCost').textContent = `$${cost.toFixed(2)}`;
+    const profitEl = document.getElementById('previewProfit');
+    profitEl.textContent = `$${profit.toFixed(2)}`;
+    profitEl.className = profit >= 0 ? 'profit-positive' : 'profit-negative';
+}
+
+function saveAssignment() {
+    const newCapacity = parseFloat(document.getElementById('capacitySlider').value);
+    const newFit = parseFloat(document.getElementById('fitSlider').value);
+    
+    // Обновляем assignment
+    currentEditAssignment.capacity = newCapacity;
+    
+    // Обновляем fit coefficient
+    const monthKey = getCurrentMonthKey();
+    if (!fitCoefficients[currentEditAssignment.projectId]) {
+        fitCoefficients[currentEditAssignment.projectId] = {};
+    }
+    fitCoefficients[currentEditAssignment.projectId][currentEditEmployee.position] = newFit;
+    
+    // Сохраняем
+    saveDataToLocalStorage();
+    
+    // Обновляем таблицы
+    renderEmployeesTable();
+    renderProjectsTable();
+    if (typeof showProjectsOverview === 'function') showProjectsOverview();
+    
+    // Закрываем модалку
+    closeEditAssignmentModal();
+}
+
+function closeEditAssignmentModal() {
+    document.getElementById('editAssignmentModal').style.display = 'none';
+}
+
+function getEmployeeTotalAssigned(employeeId, excludeProjectId = null) {
+    return assignments
+        .filter(a => a.employeeId === employeeId && a.projectId !== excludeProjectId)
+        .reduce((sum, a) => sum + a.capacity, 0);
+}
+let currentUnassignData = null;
+
+function openUnassignConfirmation(assignmentId, employeeId, projectId) {
+    const monthKey = getCurrentMonthKey();
+    const assignment = assignments.find(a => a.id === assignmentId);
+    const employee = employeesData.find(e => e.id === employeeId);
+    const project = findProjectById(projectId, monthKey);
+    
+    if (!assignment || !employee || !project) return;
+    
+    currentUnassignData = { assignment, employee, project };
+    
+    // Рассчитываем финансовые показатели
+    const fit = fitCoefficients[projectId]?.[employee.position] || 1.0;
+    const vacationDays = vacations[monthKey]?.[employeeId] || 0;
+    const workingDays = 22;
+    const vacationFactor = 1 - (vacationDays / workingDays);
+    const effectiveCapacity = assignment.capacity * fit * vacationFactor;
+    const revenue = effectiveCapacity * employee.salary * 1.2;
+    const cost = assignment.capacity * employee.salary;
+    const profit = revenue - cost;
+    
+    // Текущие показатели проекта
+    const currentProjectCapacity = getProjectTotalCapacity(projectId);
+    const currentProjectRevenue = getProjectTotalRevenue(projectId);
+    
+    // Показатели после удаления
+    const afterProjectCapacity = currentProjectCapacity - assignment.capacity;
+    const afterProjectRevenue = currentProjectRevenue - revenue;
+    
+    // Создаём HTML для модалки
+    const summaryHtml = `
+        <div>
+            <p><span class="highlight">Employee:</span> ${employee.firstName} ${employee.lastName}</p>
+            <p><span class="highlight">Project:</span> ${project.projectName}</p>
+            <hr>
+            <p><span class="highlight">Assigned Capacity:</span> ${assignment.capacity} hours</p>
+            <p><span class="highlight">Employee Salary Share:</span> $${cost.toFixed(2)}</p>
+            <p><span class="highlight">Budget Share:</span> $${(project.budget * (assignment.capacity / 176)).toFixed(2)}</p>
+            <p><span class="highlight">Employee Income from this assignment:</span> $${revenue.toFixed(2)}</p>
+            <hr>
+            <p><strong>Project Impact:</strong></p>
+            <p>Current Project Capacity: ${currentProjectCapacity} hours</p>
+            <p>After Removal: ${afterProjectCapacity} hours ${afterProjectCapacity < 0 ? '⚠️' : ''}</p>
+            <p>Current Project Revenue: $${currentProjectRevenue.toFixed(2)}</p>
+            <p>After Removal: <span class="${afterProjectRevenue >= 0 ? 'positive' : 'negative'}">$${afterProjectRevenue.toFixed(2)}</span></p>
+            <hr>
+            <p>This assignment ${profit >= 0 ? 'contributes' : 'loses'} 
+                <span class="${profit >= 0 ? 'positive' : 'negative'}">$${Math.abs(profit).toFixed(2)}</span> 
+                to overall profit ${profit >= 0 ? '' : '(loss)'}</p>
+        </div>
+    `;
+    
+    document.getElementById('unassignSummary').innerHTML = summaryHtml;
+    document.getElementById('unassignModal').style.display = 'flex';
+}
+
+function confirmUnassign() {
+    if (!currentUnassignData) return;
+    
+    const { assignment, employee, project } = currentUnassignData;
+    
+    // Удаляем assignment
+    const index = assignments.findIndex(a => a.id === assignment.id);
+    if (index !== -1) assignments.splice(index, 1);
+    
+    // Сохраняем и обновляем
+    saveDataToLocalStorage();
+    renderEmployeesTable();
+    renderProjectsTable();
+    if (typeof showProjectsOverview === 'function') showProjectsOverview();
+    
+    closeUnassignModal();
+    
+    // Показываем уведомление
+    console.log(`✅ Employee ${employee.firstName} ${employee.lastName} unassigned from project ${project.projectName}`);
+}
+
+function closeUnassignModal() {
+    document.getElementById('unassignModal').style.display = 'none';
+    currentUnassignData = null;
+}
+
+function getProjectTotalCapacity(projectId) {
+    return assignments
+        .filter(a => a.projectId === projectId)
+        .reduce((sum, a) => sum + a.capacity, 0);
+}
+
+function getProjectTotalRevenue(projectId) {
+    const monthKey = getCurrentMonthKey();
+    let totalRevenue = 0;
+    
+    assignments
+        .filter(a => a.projectId === projectId)
+        .forEach(a => {
+            const employee = employeesData.find(e => e.id === a.employeeId);
+            if (employee) {
+                const fit = fitCoefficients[projectId]?.[employee.position] || 1.0;
+                const vacationDays = vacations[monthKey]?.[employee.id] || 0;
+                const workingDays = 22;
+                const vacationFactor = 1 - (vacationDays / workingDays);
+                const effectiveCapacity = a.capacity * fit * vacationFactor;
+                totalRevenue += effectiveCapacity * employee.salary * 1.2;
+            }
+        });
+    
+    return totalRevenue;
+}
+// Инициализация обработчиков модалок
+document.addEventListener('DOMContentLoaded', () => {
+    // Edit Assignment
+    document.querySelector('#editAssignmentModal .modal-close')?.addEventListener('click', closeEditAssignmentModal);
+    document.querySelector('#editAssignmentModal .modal-close-btn')?.addEventListener('click', closeEditAssignmentModal);
+    document.getElementById('saveAssignmentBtn')?.addEventListener('click', saveAssignment);
+    
+    // Unassign
+    document.querySelector('#unassignModal .modal-close')?.addEventListener('click', closeUnassignModal);
+    document.querySelector('#unassignModal .modal-close-btn')?.addEventListener('click', closeUnassignModal);
+    document.getElementById('confirmUnassignBtn')?.addEventListener('click', confirmUnassign);
+    
+    // Клик по фону
+    document.getElementById('editAssignmentModal')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeEditAssignmentModal();
+    });
+    document.getElementById('unassignModal')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeUnassignModal();
+    });
+});
+// ============ ОБРАБОТЧИК КНОПКИ EDIT ============
+document.addEventListener('click', function(e) {
+    const editBtn = e.target.closest('.edit-assignment-btn');
+    if (!editBtn) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Получаем данные из атрибутов
+    const assignmentId = editBtn.dataset.assignmentId;
+    const employeeId = editBtn.dataset.employeeId;
+    const projectId = editBtn.dataset.projectId;
+    
+    console.log('📝 Edit button clicked:', {
+        assignmentId: assignmentId,
+        employeeId: employeeId,
+        projectId: projectId,
+        allData: editBtn.dataset
+    });
+    
+    // Проверяем наличие всех данных
+    if (!assignmentId || !employeeId || !projectId) {
+        console.error('❌ Missing data:', { assignmentId, employeeId, projectId });
+        alert('Error: Missing assignment data');
+        return;
+    }
+    
+    // Вызываем функцию редактирования
+    if (typeof openEditAssignment === 'function') {
+        openEditAssignment(parseInt(assignmentId), parseInt(employeeId), parseInt(projectId));
+    } else {
+        console.error('❌ openEditAssignment function not found!');
+        alert('Edit function not available');
+    }
+});
