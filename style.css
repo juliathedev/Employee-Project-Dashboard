@@ -887,7 +887,6 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
 .modal-container {
     background: white;
     border-radius: 12px;
-    width: 500px;
     max-width: 90%;
     max-height: 80vh;
     overflow-y: auto;

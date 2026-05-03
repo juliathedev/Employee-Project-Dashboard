@@ -763,7 +763,7 @@ function renderEmployeesTable() {
                         <i class="fa-solid fa-user-plus"></i>
                         Assign
                     </button>
-                    <button class="delete-employee-btn btn__action" data-id="${emp.id}">
+                    <button class="delete-employee-btn btn__action" data-id="${emp.id}" onclick="deleteEmployee(101)">
                         <i class="fa-solid fa-trash"></i>
                         Delete
                     </button>
@@ -785,7 +785,7 @@ function getEmployeeEstimatedPayment(employeeId, monthKey) {
     if (!employee) return 0;
     const empAssignments = assignments.filter(a => a.employeeId == employeeId);
     if (empAssignments.length === 0) {
-        // бенч
+        
         return employee.salary * 0.5;
     }
     let total = 0;
@@ -1013,7 +1013,7 @@ function attachInlineEditing() {
     });
 }
 function attachEmployeeActionButtons() {
-    // Принудительно привязываем кнопки Assign
+    
     const assignBtns = document.querySelectorAll('.assign-btn:not([disabled])');
     console.log('🟢 Found assign buttons:', assignBtns.length);
     
@@ -1050,18 +1050,48 @@ function attachEmployeeActionButtons() {
     document.querySelectorAll('.delete-employee-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const empId = parseInt(btn.dataset.id);
-            if (confirm('Delete employee permanently? All assignments will be lost.')) {
-                const index = employeesData.findIndex(e => e.id === empId);
-                if (index !== -1) employeesData.splice(index, 1);
-                // удаляем назначения
-                for (let i = assignments.length-1; i >= 0; i--) {
-                    if (assignments[i].employeeId === empId) assignments.splice(i,1);
+            
+            const employee = employeesData.find(e => e.id === empId);
+            
+            let fullName = `ID: ${empId}`;
+            if (employee) {
+                if (employee.firstName && employee.lastName) {
+                    fullName = `${employee.firstName} ${employee.lastName}`;
+                } else if (employee.name) {
+                    fullName = employee.name;
+                } else if (employee.fullName) {
+                    fullName = employee.fullName;
+                } else {
+                    fullName = `Employee ${empId}`;
                 }
-                renderEmployeesTable();
-                renderProjectsTable(); // обновить таблицу проектов (могли измениться Employee count)
             }
+            
+            const confirmMessage = `⚠️ Delete Employee\n\nAre you sure you want to delete "${fullName}"?\n\nAll assignments will be removed.`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            const index = employeesData.findIndex(e => e.id === empId);
+            if (index !== -1) employeesData.splice(index, 1);
+            
+            for (let i = assignments.length - 1; i >= 0; i--) {
+                if (assignments[i].employeeId === empId) assignments.splice(i, 1);
+            }
+            
+            const monthKey = getCurrentMonthKey();
+            if (vacations[monthKey] && vacations[monthKey][empId]) {
+                delete vacations[monthKey][empId];
+            }
+            
+            if (typeof saveDataToLocalStorage === 'function') saveDataToLocalStorage();
+            
+            renderEmployeesTable();
+            renderProjectsTable();
+            
+            console.log(`✅ Employee deleted: ${fullName}`);
         });
-    });
+});
 
     // Show Assignments
     document.querySelectorAll('.show-assignments-btn').forEach(btn => {
@@ -1669,9 +1699,8 @@ document.getElementById('assignSubmitBtn').onclick = () => {
 };
 
 // ======= AVAILABILITY CALENDAR =======
-// Глобальные переменные для календаря
 let currentCalendarDate = new Date();
-let selectedVacationDays = new Set(); // Хранит строки "YYYY-MM-DD"
+let selectedVacationDays = new Set();
 let currentCalendarEmployeeId = null;
 
 function showAvailabilityCalendar(employeeId) {
@@ -1683,7 +1712,7 @@ function showAvailabilityCalendar(employeeId) {
     
     currentMonthKey = getCurrentMonthKey();
     
-    // Загружаем сохраненные отпуска
+    
     const savedVacations = vacations[currentMonthKey]?.[employeeId] || [];
     selectedVacationDays.clear();
     savedVacations.forEach(dateStr => {
@@ -1871,33 +1900,23 @@ function updateWorkingDaysInfo() {
     document.getElementById('totalWorkingDays').textContent = totalWorkingDays;
 }
 
-// function formatDateToYYYYMMDD(date) {
-//     const year = date.getFullYear();
-//     const month = String(date.getMonth() + 1).padStart(2, '0');
-//     const day = String(date.getDate()).padStart(2, '0');
-//     return `${year}-${month}-${day}`;
-// }
-
 function setVacationDays() {
     if (!currentCalendarEmployeeId) return;
     
     const monthKey = getCurrentMonthKey();
     
-    // Инициализируем структуру если нужно
+    
     if (!vacations[monthKey]) {
         vacations[monthKey] = {};
     }
     
-    // Сохраняем выбранные отпуска
+    
     vacations[monthKey][currentCalendarEmployeeId] = Array.from(selectedVacationDays);
     
-    // Пересохраняем в localStorage
     saveDataToLocalStorage();
     
-    // Закрываем модалку
     closeAvailabilityModal();
     
-    // Обновляем все таблицы с пересчетом метрик
     refreshAllTables();
 }
 
@@ -1913,10 +1932,9 @@ function refreshAllTables() {
     if (typeof showEmployeesList === 'function') {
         showEmployeesList();
     }
-    // Добавьте другие функции обновления таблиц
+    
 }
 
-// Навигация по месяцам
 function prevMonth() {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
     renderCalendar();
@@ -1952,19 +1970,16 @@ function initModalHandlers() {
     const modal = document.getElementById('availabilityModal');
     if (!modal) return;
     
-    // Закрытие по кнопкам
     const closeBtn = modal.querySelector('.modal-close');
     const cancelBtn = modal.querySelector('.modal-close-btn');
     
     if (closeBtn) closeBtn.onclick = closeAvailabilityModal;
     if (cancelBtn) cancelBtn.onclick = closeAvailabilityModal;
     
-    // Закрытие по клику на фон
     modal.onclick = (e) => {
         if (e.target === modal) closeAvailabilityModal();
     };
     
-    // Закрытие по Escape
     document.onkeydown = (e) => {
         if (e.key === 'Escape' && modal.style.display === 'flex') {
             closeAvailabilityModal();
