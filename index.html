@@ -356,6 +356,62 @@
             </div>
         </div>
     </div>
+    <!-- Edit Assignment Modal -->
+    <div id="editAssignmentModal" class="modal" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-pen"></i> Edit Assignment</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="assignment-info">
+                    <p><strong>Employee:</strong> <span id="editEmployeeName"></span></p>
+                    <p><strong>Project:</strong> <span id="editProjectName"></span></p>
+                </div>
+                
+                <div class="slider-group">
+                    <label>Capacity: <span id="capacityValue">0</span> hours</label>
+                    <input type="range" id="capacitySlider" min="0" max="176" step="1">
+                    <div class="validation-message" id="capacityValidation"></div>
+                </div>
+                
+                <div class="slider-group">
+                    <label>Fit Coefficient: <span id="fitValue">0</span></label>
+                    <input type="range" id="fitSlider" min="0" max="1" step="0.01">
+                    <div class="validation-message" id="fitValidation"></div>
+                </div>
+                
+                <div class="financial-preview">
+                    <h4>Financial Impact Preview</h4>
+                    <div class="preview-row">Revenue: <span id="previewRevenue">$0</span></div>
+                    <div class="preview-row">Cost: <span id="previewCost">$0</span></div>
+                    <div class="preview-row">Profit: <span id="previewProfit" class="profit-positive">$0</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveAssignmentBtn" class="btn-primary">Save Changes</button>
+                <button class="btn-secondary modal-close-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <!-- Unassign Confirmation Modal -->
+    <div id="unassignModal" class="modal" style="display: none;">
+        <div class="modal-container unassign-modal-container">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-minus"></i> Unassign Employee</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="unassign-summary" id="unassignSummary">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmUnassignBtn" class="btn-danger">Unassign</button>
+                <button class="btn-secondary modal-close-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
