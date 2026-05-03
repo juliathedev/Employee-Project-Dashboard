@@ -1049,7 +1049,86 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
 .btn-secondary:hover {
     background: #7f8c8d;
 }
-/* При сортировке по убыванию (desc) — поворачиваем стрелку */
-.sortable[data-sort-direction="desc"] .fa-arrow-down-wide-short {
-    transform: rotate(180deg);
+/* Edit Assignment Modal */
+.slider-group {
+    margin-bottom: 20px;
+}
+
+.slider-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.slider-group input {
+    width: 100%;
+}
+
+.validation-message {
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.validation-message.error {
+    color: #dc3545;
+}
+
+.validation-message.success {
+    color: #28a745;
+}
+
+.financial-preview {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.preview-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+}
+
+/* Unassign Modal */
+.unassign-modal-container {
+    width: 550px;
+    max-width: 90%;
+}
+
+.unassign-summary {
+    line-height: 1.6;
+}
+
+.unassign-summary .highlight {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.unassign-summary .positive {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.unassign-summary .negative {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.unassign-summary hr {
+    margin: 15px 0;
+    border-color: #eee;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background: #c82333;
 }
