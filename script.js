@@ -1108,7 +1108,6 @@ function attachEmployeeActionButtons() {
 }
 
 function showEmployeeAssignmentsModal(employeeId) {
-    // Добавляем ID если нет
     assignments.forEach((assign, idx) => {
         if (!assign.id) assign.id = idx + 1;
     });
@@ -1159,7 +1158,7 @@ function showEmployeeAssignmentsModal(employeeId) {
                             <i class="fa-solid fa-user-minus"></i> Unassign
                         </button>
                     </td>
-                 </tr>
+                </tr>
             `;
         }).join('');
     }
@@ -1964,7 +1963,6 @@ function closeAvailabilityModal() {
 }
 
 function refreshAllTables() {
-    // Обновляем все таблицы на странице
     if (typeof showProjectsOverview === 'function') {
         showProjectsOverview();
     }
@@ -1988,7 +1986,6 @@ function nextMonth() {
     updateWorkingDaysInfo();
 }
 
-// В событии слушателе
 document.body.addEventListener('click', function(e) {
     const btn = e.target.closest('.availability-btn');
     if (btn && btn.dataset.id) {  // ← было employeeId, стало id
@@ -2026,7 +2023,6 @@ function initModalHandlers() {
     };
 }
 // ====== Edit Assignment ======
-// Глобальные переменные для редактирования
 let currentEditAssignment = null;
 let currentEditEmployee = null;
 let currentEditProject = null;
@@ -2034,7 +2030,6 @@ let currentEditProject = null;
 function openEditAssignment(assignmentId, employeeId, projectId) {
     const monthKey = getCurrentMonthKey();
     
-    // Находим данные
     currentEditAssignment = assignments.find(a => a.id === assignmentId);
     if (!currentEditAssignment) return;
     
@@ -2043,18 +2038,15 @@ function openEditAssignment(assignmentId, employeeId, projectId) {
     
     if (!currentEditEmployee || !currentEditProject) return;
     
-    // Заполняем информацию
     document.getElementById('editEmployeeName').textContent = 
         `${currentEditEmployee.firstName} ${currentEditEmployee.lastName}`;
     document.getElementById('editProjectName').textContent = currentEditProject.projectName;
     
-    // Настраиваем слайдеры
     const capacitySlider = document.getElementById('capacitySlider');
     const fitSlider = document.getElementById('fitSlider');
     const capacityValue = document.getElementById('capacityValue');
     const fitValue = document.getElementById('fitValue');
     
-    // Получаем текущий fit коэффициент
     const currentFit = fitCoefficients[projectId]?.[currentEditEmployee.position] || 1.0;
     
     capacitySlider.value = currentEditAssignment.capacity;
@@ -2062,7 +2054,6 @@ function openEditAssignment(assignmentId, employeeId, projectId) {
     capacityValue.textContent = currentEditAssignment.capacity;
     fitValue.textContent = currentFit;
     
-    // Добавляем обработчики
     capacitySlider.oninput = () => {
         capacityValue.textContent = capacitySlider.value;
         validateAndPreview();
@@ -2073,7 +2064,6 @@ function openEditAssignment(assignmentId, employeeId, projectId) {
         validateAndPreview();
     };
     
-    // Показываем модалку
     document.getElementById('editAssignmentModal').style.display = 'flex';
     validateAndPreview();
 }
@@ -2084,7 +2074,6 @@ function validateAndPreview() {
     
     let isValid = true;
     
-    // Валидация capacity
     const capacityValidation = document.getElementById('capacityValidation');
     const employeeTotalAssigned = getEmployeeTotalAssigned(currentEditEmployee.id, currentEditAssignment.projectId);
     const availableCapacity = currentEditEmployee.salary / 100; // Пример: 100 hours = 10000 salary
@@ -2102,7 +2091,6 @@ function validateAndPreview() {
         capacityValidation.className = 'validation-message success';
     }
     
-    // Валидация fit
     const fitValidation = document.getElementById('fitValidation');
     if (fit < 0 || fit > 1) {
         fitValidation.textContent = '❌ Fit must be between 0 and 1.0';
@@ -2113,10 +2101,8 @@ function validateAndPreview() {
         fitValidation.className = 'validation-message success';
     }
     
-    // Обновляем preview
     updateFinancialPreview(capacity, fit);
     
-    // Включаем/выключаем кнопку сохранения
     document.getElementById('saveAssignmentBtn').disabled = !isValid;
 }
 
@@ -2140,25 +2126,20 @@ function saveAssignment() {
     const newCapacity = parseFloat(document.getElementById('capacitySlider').value);
     const newFit = parseFloat(document.getElementById('fitSlider').value);
     
-    // Обновляем assignment
     currentEditAssignment.capacity = newCapacity;
     
-    // Обновляем fit coefficient
     const monthKey = getCurrentMonthKey();
     if (!fitCoefficients[currentEditAssignment.projectId]) {
         fitCoefficients[currentEditAssignment.projectId] = {};
     }
     fitCoefficients[currentEditAssignment.projectId][currentEditEmployee.position] = newFit;
     
-    // Сохраняем
     saveDataToLocalStorage();
     
-    // Обновляем таблицы
     renderEmployeesTable();
     renderProjectsTable();
     if (typeof showProjectsOverview === 'function') showProjectsOverview();
     
-    // Закрываем модалку
     closeEditAssignmentModal();
 }
 
@@ -2298,7 +2279,6 @@ function getProjectTotalRevenue(projectId) {
     
     return totalRevenue;
 }
-// Инициализация обработчиков модалок
 document.addEventListener('DOMContentLoaded', () => {
     // Edit Assignment
     document.querySelector('#editAssignmentModal .modal-close')?.addEventListener('click', closeEditAssignmentModal);
@@ -2326,7 +2306,6 @@ document.addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
     
-    // Получаем данные из атрибутов
     const assignmentId = editBtn.dataset.assignmentId;
     const employeeId = editBtn.dataset.employeeId;
     const projectId = editBtn.dataset.projectId;
@@ -2338,14 +2317,12 @@ document.addEventListener('click', function(e) {
         allData: editBtn.dataset
     });
     
-    // Проверяем наличие всех данных
     if (!assignmentId || !employeeId || !projectId) {
         console.error('❌ Missing data:', { assignmentId, employeeId, projectId });
         alert('Error: Missing assignment data');
         return;
     }
     
-    // Вызываем функцию редактирования
     if (typeof openEditAssignment === 'function') {
         openEditAssignment(parseInt(assignmentId), parseInt(employeeId), parseInt(projectId));
     } else {
@@ -2354,130 +2331,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-
-// function showUnassignConfirmation(employeeId, projectId) {
-//     const assignment = assignments.find(a => 
-//         a.employeeId === employeeId && a.projectId === projectId
-//     );
-//     const employee = employeesData.find(e => e.id === employeeId);
-//     const project = findProjectById(projectId, getCurrentMonthKey());
-    
-//     if (!assignment || !employee || !project) {
-//         alert('Данные не найдены');
-//         return;
-//     }
-    
-//     // Создаём модалку с деталями
-//     const modalHtml = `
-//         <div id="unassignModal" style="
-//             position: fixed;
-//             top: 0;
-//             left: 0;
-//             width: 100%;
-//             height: 100%;
-//             background: rgba(0,0,0,0.5);
-//             display: flex;
-//             justify-content: center;
-//             align-items: center;
-//             z-index: 100000;
-//         ">
-//             <div style="
-//                 background: white;
-//                 border-radius: 12px;
-//                 width: 450px;
-//                 max-width: 90%;
-//                 box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-//             ">
-//                 <div style="
-//                     padding: 16px 20px;
-//                     border-bottom: 1px solid #e0e0e0;
-//                     font-size: 18px;
-//                     font-weight: bold;
-//                     color: #dc3545;
-//                 ">
-//                     ⚠️ Unassign Employee
-//                 </div>
-//                 <div style="padding: 20px;">
-//                     <div style="margin-bottom: 12px;">
-//                         <strong>Employee:</strong> ${employee.firstName} ${employee.lastName}
-//                     </div>
-//                     <div style="margin-bottom: 12px;">
-//                         <strong>Project:</strong> ${project.projectName}
-//                     </div>
-//                     <div style="margin-bottom: 12px;">
-//                         <strong>Capacity:</strong> ${assignment.capacity} hours
-//                     </div>
-//                     <hr style="margin: 16px 0; border-color: #e0e0e0;">
-//                     <div style="margin-bottom: 12px;">
-//                         <strong>Financial Impact:</strong>
-//                     </div>
-//                     <div style="margin-bottom: 8px;">
-//                         Revenue lost: <span style="color: #dc3545;">-$${(assignment.capacity * employee.salary * 1.2).toFixed(2)}</span>
-//                     </div>
-//                     <div style="margin-bottom: 8px;">
-//                         Cost saved: <span style="color: #28a745;">+$${(assignment.capacity * employee.salary).toFixed(2)}</span>
-//                     </div>
-//                 </div>
-//                 <div style="padding: 16px 20px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 10px;">
-//                     <button id="unassignCancelBtn" style="
-//                         padding: 8px 16px;
-//                         background: #6c757d;
-//                         color: white;
-//                         border: none;
-//                         border-radius: 6px;
-//                         cursor: pointer;
-//                     ">Cancel</button>
-//                     <button id="unassignConfirmBtn" style="
-//                         padding: 8px 16px;
-//                         background: #dc3545;
-//                         color: white;
-//                         border: none;
-//                         border-radius: 6px;
-//                         cursor: pointer;
-//                     ">Unassign</button>
-//                 </div>
-//             </div>
-//         </div>
-//     `;
-    
-//     // Удаляем старую модалку если есть
-//     const oldModal = document.getElementById('unassignModal');
-//     if (oldModal) oldModal.remove();
-    
-//     // Добавляем новую
-//     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-//     // Кнопка Cancel
-//     document.getElementById('unassignCancelBtn').onclick = () => {
-//         document.getElementById('unassignModal').remove();
-//     };
-    
-//     // Кнопка Confirm
-//     document.getElementById('unassignConfirmBtn').onclick = () => {
-//         const index = assignments.findIndex(a => 
-//             a.employeeId === employeeId && a.projectId === projectId
-//         );
-//         if (index !== -1) assignments.splice(index, 1);
-        
-//         renderEmployeesTable();
-//         renderProjectsTable();
-        
-//         // Закрываем все открытые модалки
-//         document.querySelectorAll('#empAssignModal, #projectEmployeesModal, .employees-modal').forEach(m => m.remove());
-        
-//         document.getElementById('unassignModal').remove();
-//         alert(`✅ ${employee.firstName} ${employee.lastName} unassigned from ${project.projectName}`);
-//     };
-    
-//     // Закрытие по клику на фон
-//     document.getElementById('unassignModal').onclick = (e) => {
-//         if (e.target === e.currentTarget) {
-//             e.currentTarget.remove();
-//         }
-//     };
-// }
-
-// Вспомогательные функции
 function getProjectTotalCapacity(projectId) {
     return assignments
         .filter(a => a.projectId === projectId)
@@ -2512,7 +2365,6 @@ function getProjectTotalCost(projectId) {
         }, 0);
 }
 // ============ ОБРАБОТЧИК ДЛЯ КНОПОК UNASSIGN ============
-// Глобальный обработчик для кнопок Unassign
 document.body.addEventListener('click', function(e) {
     const btn = e.target.closest('.unassign-btn');
     if (!btn) return;
