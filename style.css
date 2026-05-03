@@ -1085,49 +1085,6 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     justify-content: space-between;
     padding: 5px 0;
 }
-
-/* Unassign Modal */
-.unassign-modal-container {
-    width: 550px;
-    max-width: 90%;
-}
-
-.unassign-summary {
-    line-height: 1.6;
-}
-
-.unassign-summary .highlight {
-    font-weight: bold;
-    color: #007bff;
-}
-
-.unassign-summary .positive {
-    color: #28a745;
-    font-weight: bold;
-}
-
-.unassign-summary .negative {
-    color: #dc3545;
-    font-weight: bold;
-}
-
-.unassign-summary hr {
-    margin: 15px 0;
-    border-color: #eee;
-}
-
-.btn-danger {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.btn-danger:hover {
-    background: #c82333;
-}
 /* Модалка редактирования назначения */
 #editAssignmentModal {
     position: fixed;
@@ -1230,7 +1187,6 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
 
 #editAssignmentModal .btn-primary {
     background: #007bff;
-    color: ;
 }
 
 #editAssignmentModal .btn-secondary {
@@ -1242,10 +1198,173 @@ table tr:first-child th:last-child { border-top-right-radius: 12px; }
     cursor: pointer;
 }
 #editAssignmentModal .btn-secondary {
-    background: ;
 }
 
 #editAssignmentModal .btn-primary:disabled {
     background: #ccc;
     cursor: not-allowed;
+}
+/* ========== UNASSIGN MODAL STYLES ========== */
+
+#unassignModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+    display: none;
+}
+
+#unassignModal .modal-container {
+    background: white;
+    border-radius: 12px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+#unassignConfirmModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 16px 16px 0 0;
+}
+
+#unassignConfirmModal .modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #dc3545;
+}
+
+#unassignConfirmModal .modal-header h3 i {
+    margin-right: 8px;
+}
+
+#unassignConfirmModal .modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+#unassignConfirmModal .modal-close:hover {
+    color: #333;
+}
+
+#unassignConfirmModal .modal-body {
+    padding: 24px;
+}
+
+#unassignConfirmModal .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #f8f9fa;
+    border-radius: 0 0 16px 16px;
+}
+
+/* Детали */
+#unassignConfirmModal .unassign-details {
+    font-size: 14px;
+}
+
+#unassignConfirmModal .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#unassignConfirmModal .detail-row:last-child {
+    border-bottom: none;
+}
+
+#unassignConfirmModal .detail-label {
+    font-weight: 600;
+    color: #555;
+}
+
+#unassignConfirmModal .detail-value {
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+}
+
+#unassignConfirmModal .section-header {
+    font-weight: 700;
+    font-size: 15px;
+    margin: 16px 0 8px 0;
+    color: #333;
+}
+
+#unassignConfirmModal .positive {
+    color: #28a745;
+}
+
+#unassignConfirmModal .negative {
+    color: #dc3545;
+}
+
+#unassignConfirmModal hr {
+    margin: 16px 0;
+    border: none;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Кнопки */
+#unassignConfirmModal .btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+#unassignConfirmModal .btn-danger:hover {
+    background: #c82333;
+}
+
+#unassignConfirmModal .btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+#unassignConfirmModal .btn-secondary:hover {
+    background: #5a6268;
 }

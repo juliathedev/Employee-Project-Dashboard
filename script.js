@@ -1,4 +1,3 @@
-
 const projectsDataByMonth = {
     '2025-01': {
     projects: [
@@ -579,7 +578,7 @@ function showEmployeesModal(projectId, projectName) {
                             <i class="fa-solid fa-pen"></i>
                             Edit
                         </button>
-                        <button class="unassign-btn btn__action" data-employee-id="${employee.id}" data-project-id="${projectId}">
+                        <button class="unassign-btn btn__action" data-employee-id="${employee.id}" data-project-id="${projectId}" data-assignment-id="${assignment.id}">
                             <i class="fa-solid fa-user-minus"></i>
                             Unassign
                         </button>
@@ -663,23 +662,6 @@ function showEmployeesModal(projectId, projectName) {
             console.log('Data:', { assignId, empId, projId });
         });
     });
-
-
-    modal.querySelectorAll('.unassign-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const empId = btn.dataset.employeeId;
-            const projId = btn.dataset.projectId;
-            if (confirm(`Unassign employee ${empId} from project?`)) {
-                
-                const index = assignments.findIndex(a => a.employeeId == empId && a.projectId == projId);
-                if (index !== -1) assignments.splice(index, 1);
-                modal.remove();
-                
-                showEmployeesModal(projectId, projectName);
-            }
-        });
-    });
-    
     
     modal.querySelector('.btn-add-employee').addEventListener('click', () => {
     });
@@ -1126,17 +1108,20 @@ function attachEmployeeActionButtons() {
 }
 
 function showEmployeeAssignmentsModal(employeeId) {
+    // Добавляем ID если нет
     assignments.forEach((assign, idx) => {
         if (!assign.id) assign.id = idx + 1;
     });
+    
     const employee = employeesData.find(e => e.id === employeeId);
     if (!employee) return;
+    
     const monthKey = getCurrentMonthKey();
     const empAssignments = assignments.filter(a => a.employeeId === employeeId);
     
     let rowsHtml = '';
     if (empAssignments.length === 0) {
-        rowsHtml = '<tr><td colspan="6">No projects assigned</td></tr>';
+        rowsHtml = '<tr><td colspan="9">No projects assigned</td></tr>';
     } else {
         rowsHtml = empAssignments.map(assign => {
             const project = findProjectById(assign.projectId, monthKey);
@@ -1157,20 +1142,24 @@ function showEmployeeAssignmentsModal(employeeId) {
                     <td>${fit.toFixed(2)}</td>
                     <td>${vacationDays}</td>
                     <td>${effectiveCapacity.toFixed(3)}</td>
-                    <td>${'$' + revenue.toFixed(2)} </td>
-                    <td>${cost}</td>
+                    <td>$${revenue.toFixed(2)}</td>
+                    <td>$${cost.toFixed(2)}</td>
                     <td class="${profitClass}">${formatCurrency(profit)}</td>
                     <td class="actions-cell">
-                        <button class="edit-assignment-btn  btn__action" data-employee-id="${employee.id}" data-project-id="${assign.projectId}" data-assignment-id="${assign.id}">
-                            <i class="fa-solid fa-pen"></i>
-                            Edit
+                        <button class="edit-assignment-btn btn__action" 
+                                data-employee-id="${employee.id}" 
+                                data-project-id="${assign.projectId}" 
+                                data-assignment-id="${assign.id}">
+                            <i class="fa-solid fa-pen"></i> Edit
                         </button>
-                        <button class="unassign-btn btn__action" data-employee-id="${employee.id}" data-project-id="${assign.projectId}">
-                            <i class="fa-solid fa-user-minus"></i>
-                            Unassign
+                        <button class="unassign-btn btn__action" 
+                                data-employee-id="${employee.id}" 
+                                data-project-id="${assign.projectId}" 
+                                data-assignment-id="${assign.id}">
+                            <i class="fa-solid fa-user-minus"></i> Unassign
                         </button>
                     </td>
-                </tr>
+                 </tr>
             `;
         }).join('');
     }
@@ -1204,11 +1193,35 @@ function showEmployeeAssignmentsModal(employeeId) {
             </div>
         </div>
     `;
+    
+    const oldModal = document.getElementById('empAssignModal');
+    if (oldModal) oldModal.remove();
+    
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     const modal = document.getElementById('empAssignModal');
-    const closeModal = () => modal.remove();
-    modal.querySelector('.modal-close').onclick = closeModal;
-    modal.querySelector('.modal-overlay').onclick = closeModal;
+    
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+    modal.querySelector('.modal-overlay').onclick = () => modal.remove();
+    
+    modal.querySelectorAll('.edit-assignment-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const empId = parseInt(btn.dataset.employeeId);
+            const projId = parseInt(btn.dataset.projectId);
+            const assignId = parseInt(btn.dataset.assignmentId);
+            openEditAssignment(assignId, empId, projId);
+        });
+    });
+    
+    modal.querySelectorAll('.unassign-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const empId = parseInt(btn.dataset.employeeId);
+            const projId = parseInt(btn.dataset.projectId);
+            const assignId = parseInt(btn.dataset.assignmentId);
+            openUnassignConfirmation(assignId, empId, projId);
+        });
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2160,35 +2173,44 @@ function getEmployeeTotalAssigned(employeeId, excludeProjectId = null) {
 }
 let currentUnassignData = null;
 
-function openUnassignConfirmation(assignmentId, employeeId, projectId) {
+function openUnassignConfirmation(employeeId, projectId) {
+    
     const monthKey = getCurrentMonthKey();
-    const assignment = assignments.find(a => a.id === assignmentId);
+    const assignment = assignments.find(a => a.employeeId === employeeId && a.projectId === projectId);
     const employee = employeesData.find(e => e.id === employeeId);
+    
     const project = findProjectById(projectId, monthKey);
     
-    if (!assignment || !employee || !project) return;
-    
+    if (!assignment || !employee || !project) {
+        console.error('6. Данные не найдены, выход');
+        return;
+    }
+
     currentUnassignData = { assignment, employee, project };
     
-    // Рассчитываем финансовые показатели
     const fit = fitCoefficients[projectId]?.[employee.position] || 1.0;
+    
     const vacationDays = vacations[monthKey]?.[employeeId] || 0;
+    
     const workingDays = 22;
     const vacationFactor = 1 - (vacationDays / workingDays);
+    
     const effectiveCapacity = assignment.capacity * fit * vacationFactor;
+    
     const revenue = effectiveCapacity * employee.salary * 1.2;
+    
     const cost = assignment.capacity * employee.salary;
+    
     const profit = revenue - cost;
     
-    // Текущие показатели проекта
     const currentProjectCapacity = getProjectTotalCapacity(projectId);
+    
     const currentProjectRevenue = getProjectTotalRevenue(projectId);
     
-    // Показатели после удаления
     const afterProjectCapacity = currentProjectCapacity - assignment.capacity;
+    
     const afterProjectRevenue = currentProjectRevenue - revenue;
     
-    // Создаём HTML для модалки
     const summaryHtml = `
         <div>
             <p><span class="highlight">Employee:</span> ${employee.firstName} ${employee.lastName}</p>
@@ -2211,8 +2233,20 @@ function openUnassignConfirmation(assignmentId, employeeId, projectId) {
         </div>
     `;
     
-    document.getElementById('unassignSummary').innerHTML = summaryHtml;
-    document.getElementById('unassignModal').style.display = 'flex';
+    const summaryDiv = document.getElementById('unassignSummary');
+    
+    if (summaryDiv) {
+        summaryDiv.innerHTML = summaryHtml;
+    } else {
+        return;
+    }
+    
+    const modal = document.getElementById('unassignModal');
+    
+    if (modal) {
+        modal.style.display = 'flex';
+    } else {
+    }
 }
 
 function confirmUnassign() {
@@ -2220,11 +2254,9 @@ function confirmUnassign() {
     
     const { assignment, employee, project } = currentUnassignData;
     
-    // Удаляем assignment
     const index = assignments.findIndex(a => a.id === assignment.id);
     if (index !== -1) assignments.splice(index, 1);
     
-    // Сохраняем и обновляем
     saveDataToLocalStorage();
     renderEmployeesTable();
     renderProjectsTable();
@@ -2232,7 +2264,6 @@ function confirmUnassign() {
     
     closeUnassignModal();
     
-    // Показываем уведомление
     console.log(`✅ Employee ${employee.firstName} ${employee.lastName} unassigned from project ${project.projectName}`);
 }
 
@@ -2320,5 +2351,185 @@ document.addEventListener('click', function(e) {
     } else {
         console.error('❌ openEditAssignment function not found!');
         alert('Edit function not available');
+    }
+});
+
+
+// function showUnassignConfirmation(employeeId, projectId) {
+//     const assignment = assignments.find(a => 
+//         a.employeeId === employeeId && a.projectId === projectId
+//     );
+//     const employee = employeesData.find(e => e.id === employeeId);
+//     const project = findProjectById(projectId, getCurrentMonthKey());
+    
+//     if (!assignment || !employee || !project) {
+//         alert('Данные не найдены');
+//         return;
+//     }
+    
+//     // Создаём модалку с деталями
+//     const modalHtml = `
+//         <div id="unassignModal" style="
+//             position: fixed;
+//             top: 0;
+//             left: 0;
+//             width: 100%;
+//             height: 100%;
+//             background: rgba(0,0,0,0.5);
+//             display: flex;
+//             justify-content: center;
+//             align-items: center;
+//             z-index: 100000;
+//         ">
+//             <div style="
+//                 background: white;
+//                 border-radius: 12px;
+//                 width: 450px;
+//                 max-width: 90%;
+//                 box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+//             ">
+//                 <div style="
+//                     padding: 16px 20px;
+//                     border-bottom: 1px solid #e0e0e0;
+//                     font-size: 18px;
+//                     font-weight: bold;
+//                     color: #dc3545;
+//                 ">
+//                     ⚠️ Unassign Employee
+//                 </div>
+//                 <div style="padding: 20px;">
+//                     <div style="margin-bottom: 12px;">
+//                         <strong>Employee:</strong> ${employee.firstName} ${employee.lastName}
+//                     </div>
+//                     <div style="margin-bottom: 12px;">
+//                         <strong>Project:</strong> ${project.projectName}
+//                     </div>
+//                     <div style="margin-bottom: 12px;">
+//                         <strong>Capacity:</strong> ${assignment.capacity} hours
+//                     </div>
+//                     <hr style="margin: 16px 0; border-color: #e0e0e0;">
+//                     <div style="margin-bottom: 12px;">
+//                         <strong>Financial Impact:</strong>
+//                     </div>
+//                     <div style="margin-bottom: 8px;">
+//                         Revenue lost: <span style="color: #dc3545;">-$${(assignment.capacity * employee.salary * 1.2).toFixed(2)}</span>
+//                     </div>
+//                     <div style="margin-bottom: 8px;">
+//                         Cost saved: <span style="color: #28a745;">+$${(assignment.capacity * employee.salary).toFixed(2)}</span>
+//                     </div>
+//                 </div>
+//                 <div style="padding: 16px 20px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 10px;">
+//                     <button id="unassignCancelBtn" style="
+//                         padding: 8px 16px;
+//                         background: #6c757d;
+//                         color: white;
+//                         border: none;
+//                         border-radius: 6px;
+//                         cursor: pointer;
+//                     ">Cancel</button>
+//                     <button id="unassignConfirmBtn" style="
+//                         padding: 8px 16px;
+//                         background: #dc3545;
+//                         color: white;
+//                         border: none;
+//                         border-radius: 6px;
+//                         cursor: pointer;
+//                     ">Unassign</button>
+//                 </div>
+//             </div>
+//         </div>
+//     `;
+    
+//     // Удаляем старую модалку если есть
+//     const oldModal = document.getElementById('unassignModal');
+//     if (oldModal) oldModal.remove();
+    
+//     // Добавляем новую
+//     document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+//     // Кнопка Cancel
+//     document.getElementById('unassignCancelBtn').onclick = () => {
+//         document.getElementById('unassignModal').remove();
+//     };
+    
+//     // Кнопка Confirm
+//     document.getElementById('unassignConfirmBtn').onclick = () => {
+//         const index = assignments.findIndex(a => 
+//             a.employeeId === employeeId && a.projectId === projectId
+//         );
+//         if (index !== -1) assignments.splice(index, 1);
+        
+//         renderEmployeesTable();
+//         renderProjectsTable();
+        
+//         // Закрываем все открытые модалки
+//         document.querySelectorAll('#empAssignModal, #projectEmployeesModal, .employees-modal').forEach(m => m.remove());
+        
+//         document.getElementById('unassignModal').remove();
+//         alert(`✅ ${employee.firstName} ${employee.lastName} unassigned from ${project.projectName}`);
+//     };
+    
+//     // Закрытие по клику на фон
+//     document.getElementById('unassignModal').onclick = (e) => {
+//         if (e.target === e.currentTarget) {
+//             e.currentTarget.remove();
+//         }
+//     };
+// }
+
+// Вспомогательные функции
+function getProjectTotalCapacity(projectId) {
+    return assignments
+        .filter(a => a.projectId === projectId)
+        .reduce((sum, a) => sum + a.capacity, 0);
+}
+
+function getProjectTotalRevenue(projectId) {
+    const monthKey = getCurrentMonthKey();
+    let total = 0;
+    assignments
+        .filter(a => a.projectId === projectId)
+        .forEach(a => {
+            const emp = employeesData.find(e => e.id === a.employeeId);
+            if (emp) {
+                const fit = fitCoefficients[projectId]?.[emp.position] || 1.0;
+                const vacationDays = (vacations[monthKey]?.[emp.id]) || 0;
+                const workingDays = 22;
+                const vacationFactor = 1 - (vacationDays / workingDays);
+                const effectiveCapacity = a.capacity * fit * vacationFactor;
+                total += effectiveCapacity * emp.salary * 1.2;
+            }
+        });
+    return total;
+}
+
+function getProjectTotalCost(projectId) {
+    return assignments
+        .filter(a => a.projectId === projectId)
+        .reduce((sum, a) => {
+            const emp = employeesData.find(e => e.id === a.employeeId);
+            return sum + (emp ? a.capacity * emp.salary : 0);
+        }, 0);
+}
+// ============ ОБРАБОТЧИК ДЛЯ КНОПОК UNASSIGN ============
+// Глобальный обработчик для кнопок Unassign
+document.body.addEventListener('click', function(e) {
+    const btn = e.target.closest('.unassign-btn');
+    if (!btn) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🔴 Кнопка Unassign нажата!');
+    
+    const empId = parseInt(btn.dataset.employeeId);
+    const projId = parseInt(btn.dataset.projectId);
+    
+    console.log('Данные с кнопки:', { empId, projId });
+    
+    if (empId && projId) {
+        openUnassignConfirmation(empId, projId);
+    } else {
+        console.error('Нет данных на кнопке');
     }
 });
